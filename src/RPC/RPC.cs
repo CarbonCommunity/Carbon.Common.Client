@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using Carbon.Client.SDK;
+using Carbon.Extensions;
 
 /*
  *
@@ -22,7 +24,7 @@ public struct RPC
 
 	public static List<RPC> rpcList = new();
 
-	internal static Dictionary<uint, Func<BasePlayer, Network.Message, object>> _cache = new();
+	internal static Dictionary<uint, Func<ICarbonClient, Network.Message, object>> _cache = new();
 	internal static object[] _argBuffer = new object[2];
 
 	public static implicit operator string(RPC rpc)
@@ -105,7 +107,7 @@ public struct RPC
 	{
 		if (_cache.TryGetValue(rpc, out var value))
 		{
-			return value(player, message);
+			return value(player.ToCarbonClient(), message);
 		}
 
 		return null;
