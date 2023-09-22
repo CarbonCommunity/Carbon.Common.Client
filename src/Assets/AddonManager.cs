@@ -23,9 +23,10 @@ public class AddonManager : IDisposable
 	public FacepunchBehaviour Persistence => Community.Runtime.CorePlugin.persistence;
 
 	public List<Addon> Installed { get; } = new();
-	public Dictionary<string, UnityEngine.GameObject> InstalledCache { get; } = new();
+	public Dictionary<string, GameObject> InstalledCache { get; } = new();
 
 	public List<GameObject> PrefabInstances { get; } = new();
+	public List<BaseEntity> EntityInstances { get; } = new();
 	public List<byte[]> CurrentChunk { get; } = new();
 
 	internal void FixName(GameObject gameObject)
@@ -79,11 +80,24 @@ public class AddonManager : IDisposable
 			return null;
 		}
 
-		var instance = GameManager.server.CreatePrefab(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
+		var entity = lookup.GetComponent<BaseEntity>();
+		var isEntity = entity != null;
 
-		PrefabInstances.Add(instance);
+		if (isEntity)
+		{
+			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
+			entityInstance.Spawn();
+			EntityInstances.Add(entityInstance);
+		}
+		else
+		{
+			var instance = GameManager.server.CreatePrefab(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
+			PrefabInstances.Add(instance);
 
-		return instance;
+			return instance;
+		}
+
+		return null;
 	}
 	public void CreateRustPrefabs(IEnumerable<RustPrefab> prefabs)
 	{
@@ -166,7 +180,20 @@ public class AddonManager : IDisposable
 			return;
 		}
 
-		Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, prefab.Apply));
+		var entity = lookup.GetComponent<BaseEntity>();
+		var isEntity = entity != null;
+
+		if (isEntity)
+		{
+			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
+			entityInstance.Spawn();
+
+			EntityInstances.Add(entityInstance);
+		}
+		else
+		{
+			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, prefab.Apply));
+		}
 	}
 	public void CreateRustPrefabsAsync(IEnumerable<RustPrefab> prefabs)
 	{
@@ -228,11 +255,24 @@ public class AddonManager : IDisposable
 				continue;
 			}
 
-			var instance = (GameObject)null;
+			var entity = lookup.GetComponent<BaseEntity>();
+			var isEntity = entity != null;
 
-			yield return instance = GameManager.server.CreatePrefab(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
+			if (isEntity)
+			{
+				var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
+				entityInstance.Spawn();
 
-			PrefabInstances.Add(instance);
+				EntityInstances.Add(entityInstance);
+			}
+			else
+			{
+				var instance = (GameObject)null;
+
+				yield return instance = GameManager.server.CreatePrefab(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
+
+				PrefabInstances.Add(instance);
+			}
 		}
 	}
 	internal IEnumerator CreateBasedOnEnumerableAsyncImpl(IEnumerable<GameObject> gameObjects, Action<GameObject> callback = null)
@@ -376,35 +416,20 @@ public class AddonManager : IDisposable
 			Installed.Add(addon);
 		}
 	}
-	public void Uninstall()
+	public void Uninstall(bool prefabs = true, bool customPrefabs = true, bool entities = true)
 	{
-		foreach (var prefab in InstalledCache)
+		if (prefabs)
 		{
-			try
-			{
-				UnityEngine.Object.Destroy(prefab.Value);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Failed disposing asset '{prefab.Key}' ({ex.Message})\n{ex.StackTrace}");
-			}
+			ClearPrefabs();
 		}
-
-		InstalledCache.Clear();
-
-		foreach (var prefab in PrefabInstances)
+		if (customPrefabs)
 		{
-			try
-			{
-				UnityEngine.Object.Destroy(prefab);
-			}
-			catch (Exception ex)
-			{
-				Console.WriteLine($"Failed disposing a prefab ({ex.Message})\n{ex.StackTrace}");
-			}
+			ClearCustomPrefabs();
 		}
-
-		PrefabInstances.Clear();
+		if (entities)
+		{
+			ClearEntities();
+		}
 
 		foreach (var addon in Installed)
 		{
@@ -422,5 +447,57 @@ public class AddonManager : IDisposable
 		}
 
 		Installed.Clear();
+	}
+
+	public void ClearPrefabs()
+	{
+		foreach (var prefab in PrefabInstances)
+		{
+			try
+			{
+				UnityEngine.Object.Destroy(prefab);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Failed disposing a prefab ({ex.Message})\n{ex.StackTrace}");
+			}
+		}
+
+		PrefabInstances.Clear();
+	}
+	public void ClearCustomPrefabs()
+	{
+		foreach (var prefab in InstalledCache)
+		{
+			try
+			{
+				UnityEngine.Object.Destroy(prefab.Value);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Failed disposing asset '{prefab.Key}' ({ex.Message})\n{ex.StackTrace}");
+			}
+		}
+
+		InstalledCache.Clear();
+	}
+	public void ClearEntities()
+	{
+		foreach (var entity in EntityInstances)
+		{
+			try
+			{
+				if (entity.isServer && !entity.IsDestroyed)
+				{
+					entity.AdminKill();
+				}
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Failed disposing a prefab ({ex.Message})\n{ex.StackTrace}");
+			}
+		}
+
+		EntityInstances.Clear();
 	}
 }

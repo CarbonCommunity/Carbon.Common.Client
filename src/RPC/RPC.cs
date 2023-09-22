@@ -103,6 +103,11 @@ public struct RPC
 		};
 	}
 
+	public static Dictionary<uint, Func<ICarbonClient, Network.Message, object>> GetCache()
+	{
+		return _cache;
+	}
+
 	public static object HandleRPCMessage(BasePlayer player, uint rpc, Network.Message message)
 	{
 		if (_cache.TryGetValue(rpc, out var value))
