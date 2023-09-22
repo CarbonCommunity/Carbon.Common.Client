@@ -97,8 +97,8 @@ public class CarbonClientManager : ICarbonClientManager
 	{
 		if (Clients.ContainsKey(client.Connection))
 		{
-			client.Dispose();
 			Clients.Remove(client.Connection);
+			client.Dispose();
 		}
 	}
 
