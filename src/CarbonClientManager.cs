@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Carbon.Client.Packets;
 using Carbon.Client.SDK;
+using HarmonyLib;
 using Network;
 
 /*
@@ -15,6 +17,24 @@ namespace Carbon.Client;
 public class CarbonClientManager : ICarbonClientManager
 {
 	public Dictionary<Connection, ICarbonClient> Clients { get; } = new();
+
+	internal const string _PATCH_NAME = "com.carbon.clientpatch";
+	internal Harmony _PATCH;
+
+	public void ApplyPatch()
+	{
+		_PATCH?.UnpatchAll(_PATCH_NAME);
+		_PATCH = new Harmony(_PATCH_NAME);
+
+		try
+		{
+			_PATCH.PatchAll(typeof(CarbonClientManager).Assembly);
+		}
+		catch (Exception ex)
+		{
+			Logger.Error($"Failed patching Client Manager", ex);
+		}
+	}
 
 	public void OnConnected(Connection connection)
 	{
