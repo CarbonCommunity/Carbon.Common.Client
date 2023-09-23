@@ -22,9 +22,8 @@ public class BaseMountable_VehicleFixedUpdate
 	private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> Instructions, ILGenerator Generator, MethodBase Method)
 	{
 		var array = Instructions.ToArray();
-
-		int x = 0;
-		int targetIndex = Array.FindIndex(array, x => x.operand is MethodInfo { Name: "TestDist" });
+		var x = 0;
+		var targetIndex = Array.FindIndex(array, x => x.operand is MethodInfo { Name: "TestDist" });
 
 		Array.Clear(array, 0, array.Length);
 		array = null;
