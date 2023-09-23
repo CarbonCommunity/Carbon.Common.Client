@@ -83,10 +83,19 @@ public class AddonManager : IDisposable
 		var entity = lookup.GetComponent<BaseEntity>();
 		var isEntity = entity != null;
 
-		if (isEntity)
+		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			entityInstance.Spawn();
+
+			if (prefab.Entity.Flags != 0)
+			{
+				var oldFlags = entityInstance.flags;
+				entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
+				entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
+				entityInstance.SendNetworkUpdate_Flags();
+			}
+
 			EntityInstances.Add(entityInstance);
 		}
 		else
@@ -183,10 +192,18 @@ public class AddonManager : IDisposable
 		var entity = lookup.GetComponent<BaseEntity>();
 		var isEntity = entity != null;
 
-		if (isEntity)
+		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			entityInstance.Spawn();
+
+			if (prefab.Entity.Flags != 0)
+			{
+				var oldFlags = entityInstance.flags;
+				entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
+				entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
+				entityInstance.SendNetworkUpdate_Flags();
+			}
 
 			EntityInstances.Add(entityInstance);
 		}
@@ -258,10 +275,18 @@ public class AddonManager : IDisposable
 			var entity = lookup.GetComponent<BaseEntity>();
 			var isEntity = entity != null;
 
-			if (isEntity)
+			if (isEntity && !prefab.Entity.EnforcePrefab)
 			{
 				var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 				entityInstance.Spawn();
+
+				if (prefab.Entity.Flags != 0)
+				{
+					var oldFlags = entityInstance.flags;
+					entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
+					entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
+					entityInstance.SendNetworkUpdate_Flags();
+				}
 
 				EntityInstances.Add(entityInstance);
 			}
