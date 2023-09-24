@@ -82,6 +82,13 @@ namespace Carbon.Client
 				}
 			}
 
+			switch (_instance)
+			{
+				case TriggerTemperature temperature:
+					temperature.OnValidate();
+					break;
+			}
+
 			return true;
 		}
 		internal bool HandleDisabled(GameObject go)
