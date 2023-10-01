@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2023 Carbon Community
  * All rights reserved.
  *
  */
@@ -14,13 +14,13 @@ namespace Carbon.Client.Packets
 	public class BaseVector
 	{
 		[ProtoMember(1)]
-		public float X { get; set; }
+		public float X { get; init; }
 
 		[ProtoMember(2)]
-		public float Y { get; set; }
+		public float Y { get; init; }
 
 		[ProtoMember(3)]
-		public float Z { get; set; }
+		public float Z { get; init; }
 
 		public Vector3 ToVector3()
 		{
