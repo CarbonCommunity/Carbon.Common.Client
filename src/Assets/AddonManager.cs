@@ -205,11 +205,17 @@ public class AddonManager : IDisposable
 				entityInstance.SendNetworkUpdate_Flags();
 			}
 
+			prefab.ApplyModel(entityInstance.gameObject, entityInstance.GetComponent<Model>() ?? entityInstance.GetComponentInChildren<Model>());
+
 			EntityInstances.Add(entityInstance);
 		}
 		else
 		{
-			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, prefab.Apply));
+			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, go =>
+			{
+				prefab.Apply(go);
+				prefab.ApplyModel(go, go.GetComponent<Model>() ?? go.GetComponentInChildren<Model>());
+			}));
 		}
 	}
 	public void CreateRustPrefabsAsync(IEnumerable<RustPrefab> prefabs)

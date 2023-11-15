@@ -23,6 +23,9 @@ namespace Carbon.Client
 		[ProtoMember(5)]
 		public EntityData Entity;
 
+		[ProtoMember(6)]
+		public ModelData Model;
+
 		[Serializable, ProtoContract]
 		public class EntityData
 		{
@@ -62,6 +65,13 @@ namespace Carbon.Client
 				Protected = 16777216,
 				Transferring = 33554432
 			}
+		}
+
+		[Serializable, ProtoContract]
+		public class ModelData
+		{
+			[ProtoMember(1)]
+			public string PrefabPath;
 		}
 	}
 }
