@@ -70,6 +70,12 @@ namespace Carbon.Client
 		[Serializable, ProtoContract]
 		public class ModelData
 		{
+			#region Editor
+
+			public GameObject PrefabReference;
+
+			#endregion
+
 			[ProtoMember(1)]
 			public string PrefabPath;
 		}
