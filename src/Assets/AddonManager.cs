@@ -205,11 +205,17 @@ public class AddonManager : IDisposable
 				entityInstance.SendNetworkUpdate_Flags();
 			}
 
+			prefab.ApplyModel(entityInstance);
+
 			EntityInstances.Add(entityInstance);
 		}
 		else
 		{
-			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, prefab.Apply));
+			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, go =>
+			{
+				prefab.Apply(go);
+				// prefab.ApplyModel(go, go.GetComponent<Model>() ?? go.GetComponentInChildren<Model>());
+			}));
 		}
 	}
 	public void CreateRustPrefabsAsync(IEnumerable<RustPrefab> prefabs)
@@ -231,6 +237,27 @@ public class AddonManager : IDisposable
 		}
 
 		CreateRustPrefabsAsync(asset.CachedRustBundle.RustPrefabs);
+	}
+
+	public Asset FindAsset(string path)
+	{
+		foreach (var addon in Installed)
+		{
+			foreach (var asset in addon.Assets)
+			{
+				var assets = asset.Value.CachedBundle.GetAllAssetNames();
+
+				foreach (var assetPath in assets)
+				{
+					if (assetPath.Equals(path, StringComparison.InvariantCultureIgnoreCase))
+					{
+						return asset.Value;
+					}
+				}
+			}
+		}
+
+		return null;
 	}
 
 	#region Helpers
@@ -287,6 +314,8 @@ public class AddonManager : IDisposable
 					entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
 					entityInstance.SendNetworkUpdate_Flags();
 				}
+
+				prefab.ApplyModel(entityInstance);
 
 				EntityInstances.Add(entityInstance);
 			}
