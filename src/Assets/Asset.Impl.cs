@@ -58,9 +58,11 @@ public partial class Asset : IDisposable
 	{
 		foreach(var asset in CachedBundle.GetAllAssetNames())
 		{
-			if (!AddonManager.Instance.InstalledCache.ContainsKey(asset))
+			var processedAssetPath = asset.ToLower();
+
+			if (!AddonManager.Instance.InstalledCache.ContainsKey(processedAssetPath))
 			{
-				AddonManager.Instance.InstalledCache.Add(asset, CachedBundle.LoadAsset<UnityEngine.GameObject>(asset));
+				AddonManager.Instance.InstalledCache.Add(processedAssetPath, CachedBundle.LoadAsset<UnityEngine.GameObject>(asset));
 			}
 		}
 	}
