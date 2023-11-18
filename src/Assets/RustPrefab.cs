@@ -78,6 +78,9 @@ namespace Carbon.Client
 
 			[ProtoMember(1)]
 			public string PrefabPath;
+
+			[ProtoMember(2)]
+			public bool NetworkAnimation;
 		}
 	}
 }

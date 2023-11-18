@@ -35,6 +35,8 @@ public partial class Asset : IDisposable
 		CachedRustBundle = Serializer.Deserialize<RustBundle>(stream2);
 
 		CachedRustBundle.ProcessComponents(this);
+
+		CacheAssets();
 	}
 	public void UnpackBundle()
 	{
@@ -52,6 +54,8 @@ public partial class Asset : IDisposable
 		CachedRustBundle = Serializer.Deserialize<RustBundle>(stream2);
 
 		CachedRustBundle.ProcessComponents(this);
+
+		CacheAssets();
 	}
 
 	public void CacheAssets()
