@@ -5,6 +5,7 @@ using System.Linq;
 using Carbon.Client.Assets;
 using Carbon.Client.Packets;
 using Carbon.Extensions;
+using JetBrains.Annotations;
 using Network;
 using UnityEngine;
 
@@ -69,8 +70,6 @@ namespace Carbon.Client
 
 					OnCustomModelCreated?.Invoke(this);
 
-					Carbon.Logger.Log($"Anim? {Animation == null}");
-
 					var currentSubscribers = new List<Connection>();
 					var subscribers = Entity.GetSubscribers();
 
@@ -106,32 +105,7 @@ namespace Carbon.Client
 
 					if (Animation != null)
 					{
-						InvokeRepeating(() =>
-						{
-							var subscribers = Entity.GetSubscribers();
-
-							if (subscribers == null)
-							{
-								return;
-							}
-
-							using var animation = new EntityModelAnimSync();
-							var clip = Animation.clip;
-							var state = Animation[clip.name];
-							animation.EntityId = Entity.net.ID.Value;
-							animation.Clip = clip.name;
-							animation.Time = state.time;
-							animation.Speed = state.speed;
-
-							foreach (var subscriber in subscribers)
-							{
-								var client = Community.Runtime.CarbonClientManager.Get(subscriber);
-
-								if (!client.IsConnected || !client.HasCarbonClient) continue;
-
-								client.Send("entitymodelanimsync", animation);
-							}
-						}, 1f, RandomEx.GetRandomFloat(4f, 8f));
+						InvokeRepeating(SendAnimationUpdate, 1f, RandomEx.GetRandomFloat(4f, 8f));
 					}
 				});
 			}
@@ -142,6 +116,61 @@ namespace Carbon.Client
 				model.EntityId = Entity.net.ID.Value;
 				model.PrefabName = Model.PrefabPath;
 				client.Send("entitymodel", model);
+			}
+
+			public void ModifyAnimation(string clip = null, float? time = null, float? speed = null, bool sendUpdate = true)
+			{
+				if (!string.IsNullOrEmpty(clip))
+				{
+					if (Animation.clip.name != clip)
+					{
+						Animation.clip = Animation.GetClip(clip);
+					}
+				}
+
+				var state = Animation[Animation.clip.name];
+
+				if (time != null)
+				{
+					state.time = time.GetValueOrDefault();
+				}
+
+				if (speed != null)
+				{
+					state.speed = speed.GetValueOrDefault();
+				}
+
+				if (sendUpdate)
+				{
+					SendAnimationUpdate();
+				}
+			}
+
+			public void SendAnimationUpdate()
+			{
+				var subscribers = Entity.GetSubscribers();
+
+				if (subscribers == null)
+				{
+					return;
+				}
+
+				using var animation = new EntityModelAnimSync();
+				var clip = Animation.clip;
+				var state = Animation[clip.name];
+				animation.EntityId = Entity.net.ID.Value;
+				animation.Clip = clip.name;
+				animation.Time = state.time;
+				animation.Speed = state.speed;
+
+				foreach (var subscriber in subscribers)
+				{
+					var client = Community.Runtime.CarbonClientManager.Get(subscriber);
+
+					if (!client.IsConnected || !client.HasCarbonClient) continue;
+
+					client.Send("entitymodelanimsync", animation);
+				}
 			}
 
 			public void OnDestroy()
