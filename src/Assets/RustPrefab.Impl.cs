@@ -48,7 +48,12 @@ namespace Carbon.Client
 			public void Setup(BaseEntity entity, ModelData model)
 			{
 				Entity = entity;
-				Models.Add(entity, this);
+
+				if (!Models.ContainsKey(entity))
+				{
+					Models.Add(entity, this);
+				}
+
 				Model = model;
 
 				AddonManager.Instance.CreateFromCacheAsync(Model.PrefabPath, model =>
