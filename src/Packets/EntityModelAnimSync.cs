@@ -16,7 +16,13 @@ public class EntityModelAnimSync : BasePacket
 	public ulong EntityId { get; set; }
 
 	[ProtoMember(2)]
+	public string Clip { get; set; }
+
+	[ProtoMember(3)]
 	public float Time { get; set; }
+
+	[ProtoMember(4)]
+	public float Speed { get; set; }
 
 	public override void Dispose()
 	{

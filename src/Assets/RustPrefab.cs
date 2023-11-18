@@ -80,7 +80,7 @@ namespace Carbon.Client
 			public string PrefabPath;
 
 			[ProtoMember(2)]
-			public bool NetworkAnimation;
+			public bool NetworkAnimation = true;
 		}
 	}
 }
