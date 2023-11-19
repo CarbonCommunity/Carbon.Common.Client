@@ -18,6 +18,9 @@ public class EntityModel : BasePacket
 	[ProtoMember(2)]
 	public ulong EntityId { get; set; }
 
+	[ProtoMember(3)]
+	public bool OriginalCollision { get; set; }
+
 	public override void Dispose()
 	{
 	}

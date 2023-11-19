@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Carbon.Client.Assets;
 using Carbon.Client.Packets;
 using Carbon.Extensions;
-using JetBrains.Annotations;
 using Network;
 using UnityEngine;
 
@@ -43,11 +41,19 @@ namespace Carbon.Client
 
 			#endregion
 
+			#region Collision
+
+			public bool OriginalCollision;
+			public List<Collider> OriginalColliders = new();
+
+			#endregion
+
 			public static Dictionary<BaseEntity, ServerModel> Models = new();
 
 			public void Setup(BaseEntity entity, ModelData model)
 			{
 				Entity = entity;
+				OriginalCollision = model.OriginalCollision;
 
 				if (!Models.ContainsKey(entity))
 				{
@@ -55,6 +61,16 @@ namespace Carbon.Client
 				}
 
 				Model = model;
+
+				OriginalColliders.AddRange(entity.GetComponents<Collider>().Concat(entity.GetComponentsInChildren<Collider>()));
+
+				if (!model.OriginalCollision)
+				{
+					foreach (var collider in OriginalColliders)
+					{
+						Destroy(collider);
+					}
+				}
 
 				AddonManager.Instance.CreateFromCacheAsync(Model.PrefabPath, model =>
 				{
@@ -120,17 +136,35 @@ namespace Carbon.Client
 				using var model = new EntityModel();
 				model.EntityId = Entity.net.ID.Value;
 				model.PrefabName = Model.PrefabPath;
+				model.OriginalCollision = Model.OriginalCollision;
 				client.Send("entitymodel", model);
 			}
 
-			public void ModifyAnimation(string clip = null, float? time = null, float? speed = null, bool sendUpdate = true)
+			public void ModifyAnimation(string clip = null, float? time = null, float? speed = null, bool replay = false, bool sendUpdate = true)
 			{
 				if (!string.IsNullOrEmpty(clip))
 				{
 					if (Animation.clip.name != clip)
 					{
-						Animation.clip = Animation.GetClip(clip);
+						foreach (AnimationState animState in Animation)
+						{
+							if (animState.clip.name == clip)
+							{
+								Animation.clip = animState.clip;
+								break;
+							}
+						}
+
+						Animation.Play(PlayMode.StopAll);
 					}
+					else if (replay)
+					{
+						Animation.Play(PlayMode.StopAll);
+					}
+				}
+				else if (replay)
+				{
+					Animation.Play(PlayMode.StopAll);
 				}
 
 				var state = Animation[Animation.clip.name];
@@ -147,12 +181,22 @@ namespace Carbon.Client
 
 				if (sendUpdate)
 				{
-					SendAnimationUpdate();
+					SendAnimationUpdate(replay);
 				}
 			}
 
 			public void SendAnimationUpdate()
 			{
+				SendAnimationUpdate(false);
+			}
+			public void SendAnimationUpdate(bool replay)
+			{
+				if (Animation == null)
+				{
+					Entity.AdminKill();
+					return;
+				}
+
 				var subscribers = Entity.GetSubscribers();
 
 				if (subscribers == null)
@@ -167,6 +211,7 @@ namespace Carbon.Client
 				animation.Clip = clip.name;
 				animation.Time = state.time;
 				animation.Speed = state.speed;
+				animation.Replay = replay;
 
 				foreach (var subscriber in subscribers)
 				{
