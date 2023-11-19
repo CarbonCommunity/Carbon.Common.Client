@@ -87,13 +87,11 @@ public class AddonManager : IDisposable
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			entityInstance.Spawn();
+			entityInstance.enableSaving = false;
 
 			if (prefab.Entity.Flags != 0)
 			{
-				var oldFlags = entityInstance.flags;
-				entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-				entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-				entityInstance.SendNetworkUpdate_Flags();
+				entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
 			}
 
 			EntityInstances.Add(entityInstance);
