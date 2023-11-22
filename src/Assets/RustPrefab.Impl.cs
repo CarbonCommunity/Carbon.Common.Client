@@ -92,22 +92,44 @@ namespace Carbon.Client
 					OnCustomModelCreated?.Invoke(this);
 
 					var currentSubscribers = new List<Connection>();
-					var subscribers = Entity.GetSubscribers();
-
 					var action = new Action(() =>
 					{
+						var subscribers = Entity.GetSubscribers();
+
 						if (subscribers == null)
 						{
 							return;
 						}
 
+						EntityModelAnimSync animPacket = null;
+
+						if (Animation != null)
+						{
+							animPacket = new EntityModelAnimSync();
+							var clip = Animation.clip;
+							var state = Animation[clip.name];
+							animPacket.EntityId = Entity.net.ID.Value;
+							animPacket.Clip = clip.name;
+							animPacket.Time = state.time;
+							animPacket.Speed = state.speed;
+							animPacket.Replay = true;
+						}
+
+						using var modelPacket = new EntityModel
+						{
+							EntityId = Entity.net.ID.Value,
+							PrefabName = Model.PrefabPath,
+							OriginalCollision = Model.OriginalCollision,
+							AnimPacket = animPacket
+						};
+
 						foreach (var subscriber in subscribers.Where(subscriber => !currentSubscribers.Contains(subscriber)))
 						{
 							if (Community.Runtime.CarbonClientManager.Get(subscriber) is not CarbonClient client) continue;
 
-							SendSync(client);
+							SendSync(modelPacket, client);
 
-							currentSubscribers.Add(subscriber);
+							currentSubscribers.Insert(0, subscriber);
 						}
 
 						for (int i = 0; i < currentSubscribers.Count; i++)
@@ -131,13 +153,9 @@ namespace Carbon.Client
 				});
 			}
 
-			public void SendSync(CarbonClient client)
+			public void SendSync(EntityModel modelPacket, CarbonClient client)
 			{
-				using var model = new EntityModel();
-				model.EntityId = Entity.net.ID.Value;
-				model.PrefabName = Model.PrefabPath;
-				model.OriginalCollision = Model.OriginalCollision;
-				client.Send("entitymodel", model);
+				client.Send("entitymodel", modelPacket);
 			}
 
 			public void ModifyAnimation(string clip = null, float? time = null, float? speed = null, bool replay = false, bool sendUpdate = true)

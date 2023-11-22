@@ -88,6 +88,7 @@ public class AddonManager : IDisposable
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			entityInstance.Spawn();
 			entityInstance.enableSaving = false;
+			entityInstance.skinID = prefab.Entity.Skin;
 
 			if (prefab.Entity.Flags != 0)
 			{
@@ -194,13 +195,12 @@ public class AddonManager : IDisposable
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			entityInstance.Spawn();
+			entityInstance.enableSaving = false;
+			entityInstance.skinID = prefab.Entity.Skin;
 
 			if (prefab.Entity.Flags != 0)
 			{
-				var oldFlags = entityInstance.flags;
-				entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-				entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-				entityInstance.SendNetworkUpdate_Flags();
+				entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
 			}
 
 			prefab.ApplyModel(entityInstance);
@@ -283,13 +283,12 @@ public class AddonManager : IDisposable
 			{
 				var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 				entityInstance.Spawn();
+				entityInstance.enableSaving = false;
+				entityInstance.skinID = prefab.Entity.Skin;
 
 				if (prefab.Entity.Flags != 0)
 				{
-					var oldFlags = entityInstance.flags;
-					entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-					entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-					entityInstance.SendNetworkUpdate_Flags();
+					entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
 				}
 
 				prefab.ApplyModel(entityInstance);

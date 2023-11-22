@@ -21,7 +21,11 @@ public class EntityModel : BasePacket
 	[ProtoMember(3)]
 	public bool OriginalCollision { get; set; }
 
+	[ProtoMember(4)]
+	public EntityModelAnimSync AnimPacket { get; set; }
+
 	public override void Dispose()
 	{
+		AnimPacket?.Dispose();
 	}
 }
