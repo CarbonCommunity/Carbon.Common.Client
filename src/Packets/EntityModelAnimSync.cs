@@ -10,22 +10,24 @@ using ProtoBuf;
 namespace Carbon.Client.Packets;
 
 [ProtoContract]
-public class EntityModel : BasePacket
+public class EntityModelAnimSync : BasePacket
 {
 	[ProtoMember(1)]
-	public string PrefabName { get; set; }
-
-	[ProtoMember(2)]
 	public ulong EntityId { get; set; }
 
+	[ProtoMember(2)]
+	public string Clip { get; set; }
+
 	[ProtoMember(3)]
-	public bool OriginalCollision { get; set; }
+	public float Time { get; set; }
 
 	[ProtoMember(4)]
-	public EntityModelAnimSync AnimPacket { get; set; }
+	public float Speed { get; set; }
+
+	[ProtoMember(5)]
+	public bool Replay { get; set; }
 
 	public override void Dispose()
 	{
-		AnimPacket?.Dispose();
 	}
 }

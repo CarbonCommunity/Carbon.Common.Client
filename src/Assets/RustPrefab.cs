@@ -35,6 +35,9 @@ namespace Carbon.Client
 			[ProtoMember(2)]
 			public bool EnforcePrefab;
 
+			[ProtoMember(3)]
+			public ulong Skin;
+
 			[Flags]
 			public enum EntityFlags
 			{
@@ -76,8 +79,17 @@ namespace Carbon.Client
 
 			#endregion
 
+			#if UNITY_EDITOR
+			[HideInInspector]
+			#endif
 			[ProtoMember(1)]
 			public string PrefabPath;
+
+			[ProtoMember(2)]
+			public bool NetworkAnimation = true;
+
+			[ProtoMember(3)]
+			public bool OriginalCollision = false;
 		}
 	}
 }

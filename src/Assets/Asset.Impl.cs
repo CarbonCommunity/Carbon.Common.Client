@@ -35,6 +35,8 @@ public partial class Asset : IDisposable
 		CachedRustBundle = Serializer.Deserialize<RustBundle>(stream2);
 
 		CachedRustBundle.ProcessComponents(this);
+
+		CacheAssets();
 	}
 	public void UnpackBundle()
 	{
@@ -52,15 +54,19 @@ public partial class Asset : IDisposable
 		CachedRustBundle = Serializer.Deserialize<RustBundle>(stream2);
 
 		CachedRustBundle.ProcessComponents(this);
+
+		CacheAssets();
 	}
 
 	public void CacheAssets()
 	{
 		foreach(var asset in CachedBundle.GetAllAssetNames())
 		{
-			if (!AddonManager.Instance.InstalledCache.ContainsKey(asset))
+			var processedAssetPath = asset.ToLower();
+
+			if (!AddonManager.Instance.InstalledCache.ContainsKey(processedAssetPath))
 			{
-				AddonManager.Instance.InstalledCache.Add(asset, CachedBundle.LoadAsset<UnityEngine.GameObject>(asset));
+				AddonManager.Instance.InstalledCache.Add(processedAssetPath, CachedBundle.LoadAsset<UnityEngine.GameObject>(asset));
 			}
 		}
 	}

@@ -87,13 +87,12 @@ public class AddonManager : IDisposable
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			entityInstance.Spawn();
+			entityInstance.enableSaving = false;
+			entityInstance.skinID = prefab.Entity.Skin;
 
 			if (prefab.Entity.Flags != 0)
 			{
-				var oldFlags = entityInstance.flags;
-				entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-				entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-				entityInstance.SendNetworkUpdate_Flags();
+				entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
 			}
 
 			EntityInstances.Add(entityInstance);
@@ -196,13 +195,12 @@ public class AddonManager : IDisposable
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			entityInstance.Spawn();
+			entityInstance.enableSaving = false;
+			entityInstance.skinID = prefab.Entity.Skin;
 
 			if (prefab.Entity.Flags != 0)
 			{
-				var oldFlags = entityInstance.flags;
-				entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-				entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-				entityInstance.SendNetworkUpdate_Flags();
+				entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
 			}
 
 			prefab.ApplyModel(entityInstance);
@@ -237,27 +235,6 @@ public class AddonManager : IDisposable
 		}
 
 		CreateRustPrefabsAsync(asset.CachedRustBundle.RustPrefabs);
-	}
-
-	public Asset FindAsset(string path)
-	{
-		foreach (var addon in Installed)
-		{
-			foreach (var asset in addon.Assets)
-			{
-				var assets = asset.Value.CachedBundle.GetAllAssetNames();
-
-				foreach (var assetPath in assets)
-				{
-					if (assetPath.Equals(path, StringComparison.InvariantCultureIgnoreCase))
-					{
-						return asset.Value;
-					}
-				}
-			}
-		}
-
-		return null;
 	}
 
 	#region Helpers
@@ -306,13 +283,12 @@ public class AddonManager : IDisposable
 			{
 				var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 				entityInstance.Spawn();
+				entityInstance.enableSaving = false;
+				entityInstance.skinID = prefab.Entity.Skin;
 
 				if (prefab.Entity.Flags != 0)
 				{
-					var oldFlags = entityInstance.flags;
-					entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-					entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-					entityInstance.SendNetworkUpdate_Flags();
+					entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
 				}
 
 				prefab.ApplyModel(entityInstance);
