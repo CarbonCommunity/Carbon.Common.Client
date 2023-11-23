@@ -19,9 +19,12 @@ public class EntityModel : BasePacket
 	public ulong EntityId { get; set; }
 
 	[ProtoMember(3)]
-	public bool OriginalCollision { get; set; }
+	public bool EntitySolidCollision { get; set; }
 
 	[ProtoMember(4)]
+	public bool EntityTriggerCollision { get; set; }
+
+	[ProtoMember(5)]
 	public EntityModelAnimSync AnimPacket { get; set; }
 
 	public override void Dispose()
