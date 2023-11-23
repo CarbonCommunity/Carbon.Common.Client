@@ -6,6 +6,7 @@ using Carbon.Client.Packets;
 using Carbon.Extensions;
 using Network;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Carbon.Client
 {
@@ -43,7 +44,8 @@ namespace Carbon.Client
 
 			#region Collision
 
-			public bool OriginalCollision;
+			public bool EntitySolidCollision;
+			public bool EntityTriggerCollision;
 			public List<Collider> OriginalColliders = new();
 
 			#endregion
@@ -53,7 +55,8 @@ namespace Carbon.Client
 			public void Setup(BaseEntity entity, ModelData model)
 			{
 				Entity = entity;
-				OriginalCollision = model.OriginalCollision;
+				EntitySolidCollision = model.EntitySolidCollision;
+				EntityTriggerCollision = model.EntityTriggerCollision;
 
 				if (!Models.ContainsKey(entity))
 				{
@@ -64,10 +67,15 @@ namespace Carbon.Client
 
 				OriginalColliders.AddRange(entity.GetComponents<Collider>().Concat(entity.GetComponentsInChildren<Collider>()));
 
-				if (!model.OriginalCollision)
+				if (!model.EntitySolidCollision)
 				{
 					foreach (var collider in OriginalColliders)
 					{
+						if (model.EntityTriggerCollision && collider.isTrigger)
+						{
+							continue;
+						}
+
 						Destroy(collider);
 					}
 				}
@@ -119,7 +127,8 @@ namespace Carbon.Client
 						{
 							EntityId = Entity.net.ID.Value,
 							PrefabName = Model.PrefabPath,
-							OriginalCollision = Model.OriginalCollision,
+							EntitySolidCollision = Model.EntitySolidCollision,
+							EntityTriggerCollision = Model.EntityTriggerCollision,
 							AnimPacket = animPacket
 						};
 
