@@ -21,12 +21,11 @@ namespace Carbon.Client;
 [ProtoInclude(13, typeof(ClientModifications))]
 [ProtoInclude(14, typeof(HookCall))]
 [ProtoInclude(15, typeof(AddonRequest))]
-[ProtoInclude(16, typeof(AddonDownload))]
-[ProtoInclude(17, typeof(AddonDownloadUrl))]
-[ProtoInclude(18, typeof(AddonPrefab))]
-[ProtoInclude(19, typeof(AddonRustPrefab))]
-[ProtoInclude(20, typeof(EntityModel))]
-[ProtoInclude(21, typeof(EntityModelAnimSync))]
+[ProtoInclude(16, typeof(AddonDownloadUrl))]
+[ProtoInclude(17, typeof(AddonPrefab))]
+[ProtoInclude(18, typeof(AddonRustPrefab))]
+[ProtoInclude(19, typeof(EntityModel))]
+[ProtoInclude(20, typeof(EntityModelAnimSync))]
 public class BasePacket : IPacket, IDisposable
 {
 	public static T Deserialize<T>(NetRead reader)
