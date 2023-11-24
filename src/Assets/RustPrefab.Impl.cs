@@ -176,12 +176,10 @@ namespace Carbon.Client
 					}
 				});
 			}
-
 			public void SendSync(EntityModel modelPacket, CarbonClient client)
 			{
 				client.Send("entitymodel", modelPacket);
 			}
-
 			public void ModifyAnimation(string clip = null, float? time = null, float? speed = null, bool replay = false, bool sendUpdate = true)
 			{
 				Logger.Warn($"  Changing to {Entity} to {clip}");
