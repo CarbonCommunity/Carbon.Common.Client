@@ -111,6 +111,8 @@ namespace Carbon.Client
 
 						EntityModelAnimSync animPacket = null;
 
+						var isInvalid = false;
+
 						if (Animation != null)
 						{
 							animPacket = new EntityModelAnimSync();
@@ -118,9 +120,22 @@ namespace Carbon.Client
 							var state = Animation[clip.name];
 							animPacket.EntityId = Entity.net.ID.Value;
 							animPacket.Clip = clip.name;
-							animPacket.Time = state.time;
-							animPacket.Speed = state.speed;
-							animPacket.Replay = true;
+
+							if (state != null)
+							{
+								animPacket.Time = state.time;
+								animPacket.Speed = state.speed;
+								animPacket.Replay = true;
+							}
+							else
+							{
+								isInvalid = true;
+							}
+						}
+
+						if (isInvalid)
+						{
+							return;
 						}
 
 						using var modelPacket = new EntityModel
@@ -169,6 +184,8 @@ namespace Carbon.Client
 
 			public void ModifyAnimation(string clip = null, float? time = null, float? speed = null, bool replay = false, bool sendUpdate = true)
 			{
+				Logger.Warn($"  Changing to {Entity} to {clip}");
+
 				if (!string.IsNullOrEmpty(clip))
 				{
 					if (Animation.clip.name != clip)
@@ -236,9 +253,17 @@ namespace Carbon.Client
 				var state = Animation[clip.name];
 				animation.EntityId = Entity.net.ID.Value;
 				animation.Clip = clip.name;
-				animation.Time = state.time;
-				animation.Speed = state.speed;
-				animation.Replay = replay;
+
+				if (state != null)
+				{
+					animation.Time = state.time;
+					animation.Speed = state.speed;
+					animation.Replay = replay;
+				}
+				else
+				{
+					return;
+				}
 
 				foreach (var subscriber in subscribers)
 				{
