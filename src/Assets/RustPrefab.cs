@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 namespace Carbon.Client
 {
 	[ProtoContract]
-	public partial class RustPrefab : MonoBehaviour
+	public partial class RustPrefab
 	{
 		[ProtoMember(1)]
 		public string Path;
@@ -38,6 +38,12 @@ namespace Carbon.Client
 
 			[ProtoMember(3)]
 			public ulong Skin;
+
+			[ProtoMember(4)]
+			public float Health = -1;
+
+			[ProtoMember(5)]
+			public float MaxHealth = -1;
 
 			[Flags]
 			public enum EntityFlags
