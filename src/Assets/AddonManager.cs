@@ -46,14 +46,23 @@ public class AddonManager : IDisposable
 
 		if (entity is BaseCombatEntity combatEntity)
 		{
-			if (source.Entity.Combat.MaxHealth != -1)
-			{
-				combatEntity.SetMaxHealth(source.Entity.Combat.MaxHealth);
-			}
+			var combat = source.Entity.Combat;
 
-			if (source.Entity.Combat.Health != -1)
+			if (combat != null)
 			{
-				combatEntity.SetHealth(source.Entity.Combat.Health);
+				if (combat.MaxHealth != -1)
+				{
+					combatEntity.SetMaxHealth(combat.MaxHealth);
+				}
+
+				if (combat.Health != -1)
+				{
+					combatEntity.SetHealth(combat.Health);
+				}
+			}
+			else
+			{
+				Logger.Log($"Combat is null for {combatEntity.transform.GetRecursiveName()}");
 			}
 		}
 
