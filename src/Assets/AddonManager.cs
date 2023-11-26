@@ -450,7 +450,7 @@ public class AddonManager : IDisposable
 			{
 				if (entity.isServer && !entity.IsDestroyed)
 				{
-					entity.AdminKill();
+					entity.Kill();
 				}
 			}
 			catch (Exception ex)
