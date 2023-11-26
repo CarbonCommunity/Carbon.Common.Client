@@ -95,10 +95,16 @@ namespace Carbon.Client
 			[ProtoMember(2)]
 			public bool NetworkAnimation = true;
 
+#if UNITY_EDITOR
+			[Tooltip("When this is enabled, the server will occasionally send a network packet to synchronize the animation time, speed and clip, making sure playback is consistent.")]
+#endif
 			[ProtoMember(3)]
-			public bool EntitySolidCollision = false;
+			public bool SyncAnimation = false;
 
 			[ProtoMember(4)]
+			public bool EntitySolidCollision = false;
+
+			[ProtoMember(5)]
 			public bool EntityTriggerCollision = false;
 		}
 	}

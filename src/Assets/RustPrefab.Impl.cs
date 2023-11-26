@@ -83,22 +83,22 @@ namespace Carbon.Client
 					}
 				}
 
-				AddonManager.Instance.CreateFromCacheAsync(Model.PrefabPath, model =>
+				AddonManager.Instance.CreateFromCacheAsync(Model.PrefabPath, prefab =>
 				{
-					if (model == null)
+					if (prefab == null)
 					{
 						return;
 					}
 
 					if (Model.NetworkAnimation)
 					{
-						Animation = model.GetComponent<Animation>();
+						Animation = prefab.GetComponent<Animation>();
 					}
 
-					model.transform.SetParent(entity.transform, false);
-					model.transform.localPosition = Vector3.zero;
-					model.transform.localRotation = Quaternion.identity;
-					model.transform.localScale = Vector3.one;
+					prefab.transform.SetParent(entity.transform, false);
+					prefab.transform.localPosition = Vector3.zero;
+					prefab.transform.localRotation = Quaternion.identity;
+					prefab.transform.localScale = Vector3.one;
 
 					OnCustomModelCreated?.Invoke(this);
 
@@ -173,7 +173,7 @@ namespace Carbon.Client
 					InvokeRepeating(action, 1f, RandomEx.GetRandomFloat(1f, 3f));
 					action.Invoke();
 
-					if (Animation != null)
+					if (Animation != null && model.SyncAnimation)
 					{
 						InvokeRepeating(SendAnimationUpdate, 1f, RandomEx.GetRandomFloat(4f, 8f));
 					}
