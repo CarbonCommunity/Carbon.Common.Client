@@ -65,7 +65,7 @@ namespace Carbon.Client
 
 				Model = model;
 
-				OriginalColliders.AddRange(entity.GetComponents<Collider>().Concat(entity.GetComponentsInChildren<Collider>()));
+				OriginalColliders.AddRange(entity.GetComponents<Collider>().Concat(entity.GetComponentsInChildren<Collider>(true)));
 
 				if (!model.EntitySolidCollision)
 				{
@@ -76,7 +76,10 @@ namespace Carbon.Client
 							continue;
 						}
 
-						Destroy(collider);
+						if (!collider.isTrigger)
+						{
+							Destroy(collider);
+						}
 					}
 				}
 

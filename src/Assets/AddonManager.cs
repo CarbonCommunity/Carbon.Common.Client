@@ -33,6 +33,33 @@ public class AddonManager : IDisposable
 		gameObject.name = gameObject.name.Replace("(Clone)", string.Empty);
 	}
 
+	internal void ProcessEntity(BaseEntity entity, RustPrefab source)
+	{
+		entity.Spawn();
+		entity.enableSaving = false;
+		entity.skinID = source.Entity.Skin;
+
+		if (source.Entity.Flags != 0)
+		{
+			entity.SetFlag((BaseEntity.Flags)source.Entity.Flags, true);
+		}
+
+		if (entity is BaseCombatEntity combatEntity)
+		{
+			if (source.Entity.MaxHealth != -1)
+			{
+				combatEntity.SetMaxHealth(source.Entity.MaxHealth);
+			}
+
+			if (source.Entity.Health != -1)
+			{
+				combatEntity.SetHealth(source.Entity.Health);
+			}
+		}
+
+		source.ApplyModel(entity);
+	}
+
 	public GameObject CreateFromAsset(string path, Asset asset)
 	{
 		if (asset == null)
@@ -85,14 +112,7 @@ public class AddonManager : IDisposable
 		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
-			entityInstance.Spawn();
-			entityInstance.enableSaving = false;
-			entityInstance.skinID = prefab.Entity.Skin;
-
-			if (prefab.Entity.Flags != 0)
-			{
-				entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
-			}
+			ProcessEntity(entityInstance, prefab);
 
 			EntityInstances.Add(entityInstance);
 		}
@@ -193,16 +213,7 @@ public class AddonManager : IDisposable
 		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
-			entityInstance.Spawn();
-			entityInstance.enableSaving = false;
-			entityInstance.skinID = prefab.Entity.Skin;
-
-			if (prefab.Entity.Flags != 0)
-			{
-				entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
-			}
-
-			prefab.ApplyModel(entityInstance);
+			ProcessEntity(entityInstance, prefab);
 
 			EntityInstances.Add(entityInstance);
 		}
@@ -281,16 +292,7 @@ public class AddonManager : IDisposable
 			if (isEntity && !prefab.Entity.EnforcePrefab)
 			{
 				var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
-				entityInstance.Spawn();
-				entityInstance.enableSaving = false;
-				entityInstance.skinID = prefab.Entity.Skin;
-
-				if (prefab.Entity.Flags != 0)
-				{
-					entityInstance.SetFlag((BaseEntity.Flags)prefab.Entity.Flags, true);
-				}
-
-				prefab.ApplyModel(entityInstance);
+				ProcessEntity(entityInstance, prefab);
 
 				EntityInstances.Add(entityInstance);
 			}
