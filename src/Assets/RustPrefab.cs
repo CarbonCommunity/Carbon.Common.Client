@@ -30,20 +30,20 @@ namespace Carbon.Client
 		[Serializable, ProtoContract]
 		public class EntityData
 		{
-			[ProtoMember(1)]
-			public EntityFlags Flags;
-
 			[ProtoMember(2)]
 			public bool EnforcePrefab;
+
+			[ProtoMember(1)]
+			public EntityFlags Flags;
 
 			[ProtoMember(3)]
 			public ulong Skin;
 
-			[ProtoMember(4)]
-			public float Health = -1;
+#if UNITY_EDITOR
+			[Header("Entity Types")]
+#endif
 
-			[ProtoMember(5)]
-			public float MaxHealth = -1;
+			public CombatEntity Combat;
 
 			[Flags]
 			public enum EntityFlags
@@ -75,6 +75,16 @@ namespace Carbon.Client
 				Protected = 16777216,
 				Transferring = 33554432
 			}
+
+			[Serializable, ProtoContract]
+			public class CombatEntity
+			{
+				[ProtoMember(1)]
+				public float Health = -1;
+
+				[ProtoMember(2)]
+				public float MaxHealth = -1;
+			}
 		}
 
 		[Serializable, ProtoContract]
@@ -92,6 +102,10 @@ namespace Carbon.Client
 			[ProtoMember(1)]
 			public string PrefabPath;
 
+#if UNITY_EDITOR
+			[Header("Animation")]
+#endif
+
 			[ProtoMember(2)]
 			public bool NetworkAnimation = true;
 
@@ -100,6 +114,10 @@ namespace Carbon.Client
 #endif
 			[ProtoMember(3)]
 			public bool SyncAnimation = false;
+
+#if UNITY_EDITOR
+			[Header("Collision")]
+#endif
 
 			[ProtoMember(4)]
 			public bool EntitySolidCollision = false;

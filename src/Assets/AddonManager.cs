@@ -46,14 +46,14 @@ public class AddonManager : IDisposable
 
 		if (entity is BaseCombatEntity combatEntity)
 		{
-			if (source.Entity.MaxHealth != -1)
+			if (source.Entity.Combat.MaxHealth != -1)
 			{
-				combatEntity.SetMaxHealth(source.Entity.MaxHealth);
+				combatEntity.SetMaxHealth(source.Entity.Combat.MaxHealth);
 			}
 
-			if (source.Entity.Health != -1)
+			if (source.Entity.Combat.Health != -1)
 			{
-				combatEntity.SetHealth(source.Entity.Health);
+				combatEntity.SetHealth(source.Entity.Combat.Health);
 			}
 		}
 
