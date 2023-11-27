@@ -185,8 +185,6 @@ namespace Carbon.Client
 			}
 			public void ModifyAnimation(string clip = null, float? time = null, float? speed = null, bool replay = false, bool sendUpdate = true)
 			{
-				Logger.Warn($"  Changing to {Entity} to {clip}");
-
 				if (!string.IsNullOrEmpty(clip))
 				{
 					if (Animation.clip.name != clip)
