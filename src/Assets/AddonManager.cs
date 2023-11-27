@@ -23,16 +23,21 @@ public class AddonManager : IDisposable
 	public FacepunchBehaviour Persistence => Community.Runtime.CorePlugin.persistence;
 
 	public List<Addon> Installed { get; } = new();
-	public Dictionary<string, GameObject> InstalledCache { get; } = new();
+	public Dictionary<string, CachePrefab> InstalledCache { get; } = new();
 
 	public List<GameObject> PrefabInstances { get; } = new();
 	public List<BaseEntity> EntityInstances { get; } = new();
+
+	public struct CachePrefab
+	{
+		public GameObject Object;
+		public List<RustPrefab> RustPrefabs;
+	}
 
 	internal void FixName(GameObject gameObject)
 	{
 		gameObject.name = gameObject.name.Replace("(Clone)", string.Empty);
 	}
-
 	internal void ProcessEntity(BaseEntity entity, RustPrefab source)
 	{
 		entity.Spawn();
@@ -87,6 +92,11 @@ public class AddonManager : IDisposable
 
 		if (prefab != null)
 		{
+			if (asset.CachedRustBundle.RustPrefabs.TryGetValue(path, out var rustPrefabs))
+			{
+				CreateRustPrefabs(rustPrefabs);
+			}
+
 			return CreateBasedOnImpl(prefab);
 		}
 		else
@@ -100,7 +110,8 @@ public class AddonManager : IDisposable
 	{
 		if (InstalledCache.TryGetValue(path, out var prefab))
 		{
-			return CreateBasedOnImpl(prefab);
+			CreateRustPrefabs(prefab.RustPrefabs);
+			return CreateBasedOnImpl(prefab.Object);
 		}
 
 		return null;
@@ -142,22 +153,6 @@ public class AddonManager : IDisposable
 			CreateRustPrefab(prefab);
 		}
 	}
-	public void CreateRustPrefabsFromAsset(Asset asset)
-	{
-		if(asset == null)
-		{
-			Logger.Warn($"Couldn't create Rust prefabs since asset is null. (CreateRustPrefabsFromAsset)");
-			return;
-		}
-
-		if(asset.CachedRustBundle == null)
-		{
-			Logger.Warn($"Couldn't create Rust prefabs for '{asset.Name}' since Rust bundle is not cached. (CreateRustPrefabsFromAsset)");
-			return;
-		}
-
-		CreateRustPrefabs(asset.CachedRustBundle.RustPrefabs);
-	}
 
 	public void CreateFromCacheAsync(string path, Action<GameObject> callback = null)
 	{
@@ -170,7 +165,8 @@ public class AddonManager : IDisposable
 
 		if (InstalledCache.TryGetValue(path, out var prefab))
 		{
-			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab, callback));
+			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab.Object, callback));
+			CreateRustPrefabsAsync(prefab.RustPrefabs);
 		}
 		else
 		{
@@ -199,6 +195,11 @@ public class AddonManager : IDisposable
 		if (prefab != null)
 		{
 			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab, callback));
+
+			if (asset.CachedRustBundle.RustPrefabs.TryGetValue(path, out var rustPrefabs))
+			{
+				CreateRustPrefabsAsync(rustPrefabs);
+			}
 		}
 		else
 		{
@@ -238,22 +239,6 @@ public class AddonManager : IDisposable
 	public void CreateRustPrefabsAsync(IEnumerable<RustPrefab> prefabs)
 	{
 		Persistence.StartCoroutine(CreateBasedOnPrefabsAsyncImpl(prefabs));
-	}
-	public void CreateRustPrefabsFromAssetAsync(Asset asset)
-	{
-		if (asset == null)
-		{
-			Logger.Warn($"Couldn't create Rust prefabs since asset is null. (CreateRustPrefabsFromAsset)");
-			return;
-		}
-
-		if (asset.CachedRustBundle == null)
-		{
-			Logger.Warn($"Couldn't create Rust prefabs for '{asset.Name}' since Rust bundle is not cached. (CreateRustPrefabsFromAsset)");
-			return;
-		}
-
-		CreateRustPrefabsAsync(asset.CachedRustBundle.RustPrefabs);
 	}
 
 	#region Helpers
@@ -441,7 +426,7 @@ public class AddonManager : IDisposable
 		{
 			try
 			{
-				UnityEngine.Object.Destroy(prefab.Value);
+				UnityEngine.Object.Destroy(prefab.Value.Object);
 			}
 			catch (Exception ex)
 			{

@@ -27,7 +27,7 @@ public class BaseEntity_UpdateNetworkStage
 			}
 
 			var stageName = $"stage_{__instance.FindBestStage()}";
-			
+
 			foreach (AnimationState animState in model.Animation)
 			{
 				if (animState.clip.name != stageName) continue;
