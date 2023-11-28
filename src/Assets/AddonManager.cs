@@ -238,6 +238,11 @@ public class AddonManager : IDisposable
 	}
 	public void CreateRustPrefabsAsync(IEnumerable<RustPrefab> prefabs)
 	{
+		if (prefabs == null)
+		{
+			return;
+		}
+
 		Persistence.StartCoroutine(CreateBasedOnPrefabsAsyncImpl(prefabs));
 	}
 
