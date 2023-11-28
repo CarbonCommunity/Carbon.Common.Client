@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2023 Carbon Community
  * All rights reserved.
  *
  */
@@ -29,7 +29,7 @@ public class RPCList : BasePacket
 		{
 			RpcIds = RPC.rpcList.Select(x => x.Id).ToArray(),
 			RpcNames = RPC.rpcList.Select(x => x.Name).ToArray(),
-			NoMap = Carbon.Client.NoMap.Enabled
+			NoMap = Client.NomapEnabled
 		};
 	}
 

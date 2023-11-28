@@ -66,7 +66,15 @@ public partial class Asset : IDisposable
 
 			if (!AddonManager.Instance.InstalledCache.ContainsKey(processedAssetPath))
 			{
-				AddonManager.Instance.InstalledCache.Add(processedAssetPath, CachedBundle.LoadAsset<UnityEngine.GameObject>(asset));
+				AddonManager.CachePrefab cache = default;
+				cache.Object = CachedBundle.LoadAsset<GameObject>(asset);
+
+				if (CachedRustBundle.RustPrefabs.TryGetValue(processedAssetPath, out var rustPrefabs))
+				{
+					cache.RustPrefabs = rustPrefabs;
+				}
+
+				AddonManager.Instance.InstalledCache.Add(processedAssetPath, cache);
 			}
 		}
 	}
