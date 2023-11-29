@@ -25,6 +25,7 @@ namespace Carbon.Client;
 [ProtoInclude(17, typeof(AddonPrefab))]
 [ProtoInclude(18, typeof(EntityModel))]
 [ProtoInclude(19, typeof(EntityModelAnimSync))]
+[ProtoInclude(20, typeof(OldRecoil))]
 public class BasePacket : IPacket, IDisposable
 {
 	public static T Deserialize<T>(NetRead reader)
