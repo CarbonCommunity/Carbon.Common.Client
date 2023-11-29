@@ -23,15 +23,55 @@ public class AddonManager : IDisposable
 	public FacepunchBehaviour Persistence => Community.Runtime.CorePlugin.persistence;
 
 	public List<Addon> Installed { get; } = new();
-	public Dictionary<string, GameObject> InstalledCache { get; } = new();
+	public Dictionary<string, CachePrefab> InstalledCache { get; } = new();
 
 	public List<GameObject> PrefabInstances { get; } = new();
 	public List<BaseEntity> EntityInstances { get; } = new();
-	public List<byte[]> CurrentChunk { get; } = new();
+
+	public struct CachePrefab
+	{
+		public GameObject Object;
+		public List<RustPrefab> RustPrefabs;
+	}
 
 	internal void FixName(GameObject gameObject)
 	{
 		gameObject.name = gameObject.name.Replace("(Clone)", string.Empty);
+	}
+	internal void ProcessEntity(BaseEntity entity, RustPrefab source)
+	{
+		entity.Spawn();
+		entity.enableSaving = false;
+		entity.skinID = source.Entity.Skin;
+
+		if (source.Entity.Flags != 0)
+		{
+			entity.SetFlag((BaseEntity.Flags)source.Entity.Flags, true);
+		}
+
+		if (entity is BaseCombatEntity combatEntity)
+		{
+			var combat = source.Entity.Combat;
+
+			if (combat != null)
+			{
+				if (combat.MaxHealth != -1)
+				{
+					combatEntity.SetMaxHealth(combat.MaxHealth);
+				}
+
+				if (combat.Health != -1)
+				{
+					combatEntity.SetHealth(combat.Health);
+				}
+			}
+			else
+			{
+				Logger.Log($"Combat is null for {combatEntity.transform.GetRecursiveName()}");
+			}
+		}
+
+		source.ApplyModel(entity);
 	}
 
 	public GameObject CreateFromAsset(string path, Asset asset)
@@ -52,6 +92,11 @@ public class AddonManager : IDisposable
 
 		if (prefab != null)
 		{
+			if (asset.CachedRustBundle.RustPrefabs.TryGetValue(path, out var rustPrefabs))
+			{
+				CreateRustPrefabs(rustPrefabs);
+			}
+
 			return CreateBasedOnImpl(prefab);
 		}
 		else
@@ -65,7 +110,8 @@ public class AddonManager : IDisposable
 	{
 		if (InstalledCache.TryGetValue(path, out var prefab))
 		{
-			return CreateBasedOnImpl(prefab);
+			CreateRustPrefabs(prefab.RustPrefabs);
+			return CreateBasedOnImpl(prefab.Object);
 		}
 
 		return null;
@@ -86,15 +132,7 @@ public class AddonManager : IDisposable
 		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
-			entityInstance.Spawn();
-
-			if (prefab.Entity.Flags != 0)
-			{
-				var oldFlags = entityInstance.flags;
-				entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-				entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-				entityInstance.SendNetworkUpdate_Flags();
-			}
+			ProcessEntity(entityInstance, prefab);
 
 			EntityInstances.Add(entityInstance);
 		}
@@ -115,22 +153,6 @@ public class AddonManager : IDisposable
 			CreateRustPrefab(prefab);
 		}
 	}
-	public void CreateRustPrefabsFromAsset(Asset asset)
-	{
-		if(asset == null)
-		{
-			Logger.Warn($"Couldn't create Rust prefabs since asset is null. (CreateRustPrefabsFromAsset)");
-			return;
-		}
-
-		if(asset.CachedRustBundle == null)
-		{
-			Logger.Warn($"Couldn't create Rust prefabs for '{asset.Name}' since Rust bundle is not cached. (CreateRustPrefabsFromAsset)");
-			return;
-		}
-
-		CreateRustPrefabs(asset.CachedRustBundle.RustPrefabs);
-	}
 
 	public void CreateFromCacheAsync(string path, Action<GameObject> callback = null)
 	{
@@ -143,7 +165,8 @@ public class AddonManager : IDisposable
 
 		if (InstalledCache.TryGetValue(path, out var prefab))
 		{
-			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab, callback));
+			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab.Object, callback));
+			CreateRustPrefabsAsync(prefab.RustPrefabs);
 		}
 		else
 		{
@@ -172,6 +195,11 @@ public class AddonManager : IDisposable
 		if (prefab != null)
 		{
 			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab, callback));
+
+			if (asset.CachedRustBundle.RustPrefabs.TryGetValue(path, out var rustPrefabs))
+			{
+				CreateRustPrefabsAsync(rustPrefabs);
+			}
 		}
 		else
 		{
@@ -195,42 +223,27 @@ public class AddonManager : IDisposable
 		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
-			entityInstance.Spawn();
-
-			if (prefab.Entity.Flags != 0)
-			{
-				var oldFlags = entityInstance.flags;
-				entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-				entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-				entityInstance.SendNetworkUpdate_Flags();
-			}
+			ProcessEntity(entityInstance, prefab);
 
 			EntityInstances.Add(entityInstance);
 		}
 		else
 		{
-			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, prefab.Apply));
+			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, go =>
+			{
+				prefab.Apply(go);
+				// prefab.ApplyModel(go, go.GetComponent<Model>() ?? go.GetComponentInChildren<Model>());
+			}));
 		}
 	}
 	public void CreateRustPrefabsAsync(IEnumerable<RustPrefab> prefabs)
 	{
+		if (prefabs == null)
+		{
+			return;
+		}
+
 		Persistence.StartCoroutine(CreateBasedOnPrefabsAsyncImpl(prefabs));
-	}
-	public void CreateRustPrefabsFromAssetAsync(Asset asset)
-	{
-		if (asset == null)
-		{
-			Logger.Warn($"Couldn't create Rust prefabs since asset is null. (CreateRustPrefabsFromAsset)");
-			return;
-		}
-
-		if (asset.CachedRustBundle == null)
-		{
-			Logger.Warn($"Couldn't create Rust prefabs for '{asset.Name}' since Rust bundle is not cached. (CreateRustPrefabsFromAsset)");
-			return;
-		}
-
-		CreateRustPrefabsAsync(asset.CachedRustBundle.RustPrefabs);
 	}
 
 	#region Helpers
@@ -278,15 +291,7 @@ public class AddonManager : IDisposable
 			if (isEntity && !prefab.Entity.EnforcePrefab)
 			{
 				var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
-				entityInstance.Spawn();
-
-				if (prefab.Entity.Flags != 0)
-				{
-					var oldFlags = entityInstance.flags;
-					entityInstance.flags = (BaseEntity.Flags)prefab.Entity.Flags;
-					entityInstance.OnFlagsChanged(oldFlags, entityInstance.flags);
-					entityInstance.SendNetworkUpdate_Flags();
-				}
+				ProcessEntity(entityInstance, prefab);
 
 				EntityInstances.Add(entityInstance);
 			}
@@ -342,81 +347,11 @@ public class AddonManager : IDisposable
 		}
 	}
 
-	public void ProcessChunk(AddonDownload download)
-	{
-		switch (download.Format)
-		{
-			case AddonDownload.Formats.Whole:
-			case AddonDownload.Formats.First:
-				Console.WriteLine($"Initial chunk");
-				CurrentChunk.Clear();
-				break;
-		}
-
-		CurrentChunk.Add(download.BufferChunk);
-
-		switch (download.Format)
-		{
-			case AddonDownload.Formats.Whole:
-			case AddonDownload.Formats.Last:
-				Console.WriteLine($"Finalized chunk");
-
-				var completeBuffer = CurrentChunk.SelectMany(x => x).ToArray();
-				Installed.Add(Addon.ImportFromBuffer(completeBuffer));
-				Array.Clear(completeBuffer, 0, completeBuffer.Length);
-				break;
-		}
-
-		download.Dispose();
-	}
-
-	public async void Deliver(CarbonClient client, bool uninstallAll, List<Addon> addons, bool loadingScreen)
-	{
-		client.Send("addonrequest", new AddonRequest
-		{
-			AddonCount = addons.Count,
-			BufferSize = addons.Sum(x => x.Buffer.Length),
-			LoadingScreen = loadingScreen
-		});
-
-		Logger.Log($"Sent download request to {client.Connection} with {addons.Count:n0} addons...");
-
-		var sentMain = true;
-		foreach (var addon in addons)
-		{
-			var buffer = addon.Buffer;
-			var chunks = buffer.Chunkify(4000000);
-
-			Logger.Warn($" Processing {chunks.Length} chunks (total of {buffer.Length} or {ByteEx.Format(buffer.Length)})");
-
-			for (int i = 0; i < chunks.Length; i++)
-			{
-				client.Send("addondownload", new AddonDownload
-				{
-					BufferChunk = chunks[i],
-					Format = chunks.Length == 1 ? AddonDownload.Formats.Whole : i == 0 ? AddonDownload.Formats.First : i == chunks.Length - 1 ? AddonDownload.Formats.Last : AddonDownload.Formats.Content,
-					UninstallAll = sentMain
-				});
-
-				if (sentMain)
-				{
-					sentMain = false;
-				}
-
-				await AsyncEx.WaitForSeconds(0.1f);
-			}
-
-			await AsyncEx.WaitForSeconds(0.75f);
-		}
-
-		client.Send("addonfinalized");
-	}
 	public void Deliver(CarbonClient client, bool uninstallAll, bool loadingScreen, params string[] urls)
 	{
 		client.Send("addonrequest", new AddonRequest
 		{
 			AddonCount = urls.Length,
-			IsUrlDownload = true,
 			LoadingScreen = loadingScreen
 		});
 
@@ -496,7 +431,7 @@ public class AddonManager : IDisposable
 		{
 			try
 			{
-				UnityEngine.Object.Destroy(prefab.Value);
+				UnityEngine.Object.Destroy(prefab.Value.Object);
 			}
 			catch (Exception ex)
 			{
@@ -514,7 +449,7 @@ public class AddonManager : IDisposable
 			{
 				if (entity.isServer && !entity.IsDestroyed)
 				{
-					entity.AdminKill();
+					entity.Kill();
 				}
 			}
 			catch (Exception ex)
