@@ -11,6 +11,7 @@ using System.IO;
 using Newtonsoft.Json;
 using ProtoBuf;
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace Carbon.Client.Assets;
 
@@ -69,6 +70,8 @@ public partial class Asset : IDisposable
 				AddonManager.CachePrefab cache = default;
 				cache.Object = CachedBundle.LoadAsset<GameObject>(asset);
 
+				ProcessClientObjects(cache.Object.transform);
+
 				if (CachedRustBundle.RustPrefabs.TryGetValue(processedAssetPath, out var rustPrefabs))
 				{
 					cache.RustPrefabs = rustPrefabs;
@@ -96,5 +99,28 @@ public partial class Asset : IDisposable
 		}
 
 		return CachedBundle.LoadAllAssets<T>();
+	}
+
+	public void ProcessClientObjects(Transform transform)
+	{
+		void ClearComponent<T>() where T : Component
+		{
+			var component = transform.GetComponent<T>();
+
+			if (component != null)
+			{
+				GameObject.Destroy(component);
+			}
+		}
+
+		ClearComponent<MeshRenderer>();
+		ClearComponent<SkinnedMeshRenderer>();
+		ClearComponent<AudioSource>();
+		ClearComponent<VideoPlayer>();
+
+		foreach (Transform child in transform)
+		{
+			ProcessClientObjects(child);
+		}
 	}
 }
