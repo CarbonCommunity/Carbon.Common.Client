@@ -10,7 +10,7 @@ using UnityEngine;
 
 /*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2023 Carbon Community
  * All rights reserved.
  *
  */
@@ -21,7 +21,7 @@ public class CarbonClient : ICarbonClient
 {
 	public static CommunityEntity community => RPC.SERVER ? CommunityEntity.ServerInstance : CommunityEntity.ClientInstance;
 
-	public BasePlayer Player { get; set; }	
+	public BasePlayer Player { get; set; }
 	public Connection Connection { get; set; }
 
 	public bool IsConnected => Connection != null && Connection.active;
@@ -96,16 +96,6 @@ public class CarbonClient : ICarbonClient
 			Asynchronous = asynchronous
 		};
 		Send("addon_spawn", packet);
-	}
-	public void SpawnRustPrefabs(string addon, string asset, bool asynchronous = true)
-	{
-		using var packet = new AddonRustPrefab
-		{
-			Asynchronous = asynchronous,
-			Addon = addon,
-			Asset = asset
-		};
-		Send("addon_assetspawn", packet);
 	}
 	public void DestroyPrefab(string path)
 	{

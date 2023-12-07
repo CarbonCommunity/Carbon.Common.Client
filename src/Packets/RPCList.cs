@@ -1,12 +1,13 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2023 Carbon Community
  * All rights reserved.
  *
  */
 
 using System;
 using System.Linq;
+using Carbon.Core;
 using ProtoBuf;
 
 namespace Carbon.Client.Packets;
@@ -23,13 +24,17 @@ public class RPCList : BasePacket
 	[ProtoMember(3)]
 	public bool NoMap { get; set; }
 
+	[ProtoMember(4)]
+	public bool OldRecoil { get; set; }
+
 	public static RPCList Get()
 	{
 		return new RPCList()
 		{
 			RpcIds = RPC.rpcList.Select(x => x.Id).ToArray(),
 			RpcNames = RPC.rpcList.Select(x => x.Name).ToArray(),
-			NoMap = Carbon.Client.NoMap.Enabled
+			NoMap = Client.NomapEnabled,
+			OldRecoil = Client.OldRecoil
 		};
 	}
 

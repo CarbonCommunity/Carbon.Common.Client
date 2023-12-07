@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Carbon.Client.Contracts;
 using Carbon.Client.Packets;
 using Carbon.Client.SDK;
 using HarmonyLib;
@@ -7,7 +9,7 @@ using Network;
 
 /*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2023 Carbon Community
  * All rights reserved.
  *
  */
@@ -111,6 +113,16 @@ public class CarbonClientManager : ICarbonClientManager
 		}
 
 		return client.HasCarbonClient;
+	}
+
+	public void NetworkOldRecoil(bool oldRecoil)
+	{
+		using var packet = new OldRecoil { Enable = oldRecoil };
+
+		foreach (var client in Clients.Where(x => x.Value.IsConnected && x.Value.HasCarbonClient))
+		{
+			client.Value.Send("oldrecoil", packet);
+		}
 	}
 
 	public void DisposeClient(ICarbonClient client)

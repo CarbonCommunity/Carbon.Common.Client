@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2023 Carbon Community
  * All rights reserved.
  *
  */
@@ -19,8 +19,5 @@ public class AddonRequest : BasePacket
 	public int BufferSize { get; set; }
 
 	[ProtoMember(3)]
-	public bool IsUrlDownload { get; set; }
-
-	[ProtoMember(4)]
 	public bool LoadingScreen { get; set; }
 }

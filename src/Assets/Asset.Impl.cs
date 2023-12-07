@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2023 Carbon Community
  * All rights reserved.
  *
  */
@@ -11,6 +11,7 @@ using System.IO;
 using Newtonsoft.Json;
 using ProtoBuf;
 using UnityEngine;
+using UnityEngine.Video;
 
 namespace Carbon.Client.Assets;
 
@@ -35,6 +36,8 @@ public partial class Asset : IDisposable
 		CachedRustBundle = Serializer.Deserialize<RustBundle>(stream2);
 
 		CachedRustBundle.ProcessComponents(this);
+
+		CacheAssets();
 	}
 	public void UnpackBundle()
 	{
@@ -52,15 +55,29 @@ public partial class Asset : IDisposable
 		CachedRustBundle = Serializer.Deserialize<RustBundle>(stream2);
 
 		CachedRustBundle.ProcessComponents(this);
+
+		CacheAssets();
 	}
 
 	public void CacheAssets()
 	{
 		foreach(var asset in CachedBundle.GetAllAssetNames())
 		{
-			if (!AddonManager.Instance.InstalledCache.ContainsKey(asset))
+			var processedAssetPath = asset.ToLower();
+
+			if (!AddonManager.Instance.InstalledCache.ContainsKey(processedAssetPath))
 			{
-				AddonManager.Instance.InstalledCache.Add(asset, CachedBundle.LoadAsset<UnityEngine.GameObject>(asset));
+				AddonManager.CachePrefab cache = default;
+				cache.Object = CachedBundle.LoadAsset<GameObject>(asset);
+
+				ProcessClientObjects(cache.Object.transform);
+
+				if (CachedRustBundle.RustPrefabs.TryGetValue(processedAssetPath, out var rustPrefabs))
+				{
+					cache.RustPrefabs = rustPrefabs;
+				}
+
+				AddonManager.Instance.InstalledCache.Add(processedAssetPath, cache);
 			}
 		}
 	}
@@ -82,5 +99,28 @@ public partial class Asset : IDisposable
 		}
 
 		return CachedBundle.LoadAllAssets<T>();
+	}
+
+	public void ProcessClientObjects(Transform transform)
+	{
+		void ClearComponent<T>() where T : Component
+		{
+			var component = transform.GetComponent<T>();
+
+			if (component != null)
+			{
+				GameObject.Destroy(component);
+			}
+		}
+
+		ClearComponent<MeshRenderer>();
+		ClearComponent<SkinnedMeshRenderer>();
+		ClearComponent<AudioSource>();
+		ClearComponent<VideoPlayer>();
+
+		foreach (Transform child in transform)
+		{
+			ProcessClientObjects(child);
+		}
 	}
 }
