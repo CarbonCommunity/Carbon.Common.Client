@@ -91,6 +91,29 @@ public class CarbonClient : ICarbonClient
 
 	#endregion
 
+	#region CUI
+
+	public void CreateLoadingCUI(string content)
+	{
+		using var cui = new LoadingScreenCUI()
+		{
+			Content = content
+		};
+
+		Send("loading_createcui", cui);
+	}
+	public void DestroyLoadingCUI(string name)
+	{
+		using var cui = new LoadingScreenCUI()
+		{
+			Content = name
+		};
+
+		Send("loading_destroycui", cui);
+	}
+
+	#endregion
+
 	#region Addons
 
 	public void SpawnPrefab(string path, Vector3 position, Vector3 rotation, Vector3 scale, bool asynchronous = true)

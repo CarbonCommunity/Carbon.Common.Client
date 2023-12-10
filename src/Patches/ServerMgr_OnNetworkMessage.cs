@@ -24,7 +24,7 @@ public class ServerMgr_OnNetworkMessage
 
 		if (packet.type == CarbonClientManager.PACKET_ID)
 		{
-			Carbon.Client.RPC.HandleRPCMessage(packet.Player(), packet.read.UInt32(), packet);
+			Carbon.Client.RPC.HandleRPCMessage(packet.connection, packet.read.UInt32(), packet);
 			return false;
 		}
 
