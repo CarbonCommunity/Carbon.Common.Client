@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using Carbon.Client.Contracts;
 using Carbon.Client.Packets;
@@ -19,8 +20,6 @@ namespace Carbon.Client;
 
 public class CarbonClient : ICarbonClient
 {
-	public static CommunityEntity community => RPC.SERVER ? CommunityEntity.ServerInstance : CommunityEntity.ClientInstance;
-
 	public BasePlayer Player { get; set; }
 	public Connection Connection { get; set; }
 
@@ -38,14 +37,19 @@ public class CarbonClient : ICarbonClient
 
 		try
 		{
+			var info = new SendInfo(Connection);
+
 			if (packet == null)
 			{
-				CommunityEntity.ServerInstance.ClientRPCEx(new SendInfo(Connection), null, rpc.Name);
+				NetworkSend(rpc).Send(info);
 			}
 			else
 			{
+				var write = NetworkSend(rpc);
 				var bytes = packet.Serialize();
-				CommunityEntity.ServerInstance.ClientRPCEx(new SendInfo(Connection), null, rpc.Name, bytes.Length, bytes);
+				write.WriteObject(bytes.Length);
+				write.WriteObject(bytes);
+				write.Send(info);
 			}
 		}
 		catch (Exception ex)
@@ -60,6 +64,14 @@ public class CarbonClient : ICarbonClient
 	public bool Send(string rpc, IPacket packet = default, bool bypassChecks = true)
 	{
 		return Send(RPC.Get(rpc), packet, bypassChecks);
+	}
+
+	public NetWrite NetworkSend(RPC rpc)
+	{
+		var write = Net.sv.StartWrite();
+		write.PacketID(CarbonClientManager.PACKET_ID);
+		write.UInt32(rpc.Id);
+		return write;
 	}
 
 	void ICarbonClient.Send(string rpc, IPacket packet, bool bypassChecks)
