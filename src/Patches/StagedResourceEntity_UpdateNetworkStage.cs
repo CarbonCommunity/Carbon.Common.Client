@@ -19,22 +19,27 @@ public class BaseEntity_UpdateNetworkStage
 {
 	public static void Prefix(ref StagedResourceEntity __instance)
 	{
-		if (RustPrefab.ServerModel.Models.TryGetValue(__instance, out var model))
+		if (!RustPrefab.ServerModel.Models.TryGetValue(__instance, out var model)) return;
+
+		if (model.Animation == null)
 		{
-			if (model.Animation == null)
-			{
-				return;
-			}
+			return;
+		}
 
-			var stageName = $"stage_{__instance.FindBestStage()}";
+		var currentAnimation = model.Animation.clip.name;
+		var stageName = $"stage_{__instance.FindBestStage()}";
 
-			foreach (AnimationState animState in model.Animation)
-			{
-				if (animState.clip.name != stageName) continue;
+		if (currentAnimation == stageName)
+		{
+			return;
+		}
 
-				model.ModifyAnimation(animState.clip.name, 0f, 1f);
-				break;
-			}
+		foreach (AnimationState animState in model.Animation)
+		{
+			if (animState.clip.name != stageName) continue;
+
+			model.ModifyAnimation(animState.clip.name, 0f, 1f);
+			break;
 		}
 	}
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Diagnostics;
 using Carbon.Client.Contracts;
 using Carbon.Client.Packets;
@@ -19,8 +20,6 @@ namespace Carbon.Client;
 
 public class CarbonClient : ICarbonClient
 {
-	public static CommunityEntity community => RPC.SERVER ? CommunityEntity.ServerInstance : CommunityEntity.ClientInstance;
-
 	public BasePlayer Player { get; set; }
 	public Connection Connection { get; set; }
 
@@ -38,14 +37,19 @@ public class CarbonClient : ICarbonClient
 
 		try
 		{
+			var info = new SendInfo(Connection);
+
 			if (packet == null)
 			{
-				CommunityEntity.ServerInstance.ClientRPCEx(new SendInfo(Connection), null, rpc.Name);
+				NetworkSend(rpc).Send(info);
 			}
 			else
 			{
+				var write = NetworkSend(rpc);
 				var bytes = packet.Serialize();
-				CommunityEntity.ServerInstance.ClientRPCEx(new SendInfo(Connection), null, rpc.Name, bytes.Length, bytes);
+				write.WriteObject(bytes.Length);
+				write.WriteObject(bytes);
+				write.Send(info);
 			}
 		}
 		catch (Exception ex)
@@ -62,6 +66,14 @@ public class CarbonClient : ICarbonClient
 		return Send(RPC.Get(rpc), packet, bypassChecks);
 	}
 
+	public NetWrite NetworkSend(RPC rpc)
+	{
+		var write = Net.sv.StartWrite();
+		write.PacketID(CarbonClientManager.PACKET_ID);
+		write.UInt32(rpc.Id);
+		return write;
+	}
+
 	void ICarbonClient.Send(string rpc, IPacket packet, bool bypassChecks)
 	{
 		Send(rpc, packet, bypassChecks);
@@ -75,6 +87,29 @@ public class CarbonClient : ICarbonClient
 		}
 
 		return Serializer.Deserialize<T>(new ReadOnlySpan<byte>(buffer, 0, length));
+	}
+
+	#endregion
+
+	#region CUI
+
+	public void CreateLoadingCUI(string content)
+	{
+		using var cui = new LoadingScreenCUI()
+		{
+			Content = content
+		};
+
+		Send("loading_createcui", cui);
+	}
+	public void DestroyLoadingCUI(string name)
+	{
+		using var cui = new LoadingScreenCUI()
+		{
+			Content = name
+		};
+
+		Send("loading_destroycui", cui);
 	}
 
 	#endregion
