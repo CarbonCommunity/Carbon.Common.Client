@@ -20,6 +20,8 @@ public class CarbonClientManager : ICarbonClientManager
 {
 	public Dictionary<Connection, ICarbonClient> Clients { get; } = new();
 
+	public const Message.Type PACKET_ID = (Message.Type)77;
+
 	internal const string _PATCH_NAME = "com.carbon.clientpatch";
 	internal Harmony _PATCH;
 

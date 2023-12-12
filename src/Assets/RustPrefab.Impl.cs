@@ -4,6 +4,7 @@ using System.Linq;
 using Carbon.Client.Assets;
 using Carbon.Client.Packets;
 using Carbon.Extensions;
+using Facepunch;
 using Network;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -39,6 +40,7 @@ namespace Carbon.Client
 			#region Animation
 
 			public Animation Animation;
+			public Dictionary<int, string> HealthAnimations;
 
 			#endregion
 
@@ -93,6 +95,8 @@ namespace Carbon.Client
 					if (Model.NetworkAnimation)
 					{
 						Animation = prefab.GetComponent<Animation>();
+
+						ProcessAnimations();
 					}
 
 					prefab.transform.SetParent(entity.transform, false);
@@ -272,6 +276,40 @@ namespace Carbon.Client
 
 					client.Send("entitymodelanimsync", animation);
 				}
+			}
+
+			const string healthStr = "health_";
+
+			public void ProcessAnimations()
+			{
+				if (Animation == null)
+				{
+					return;
+				}
+
+				var animations = Pool.GetList<int>();
+
+				foreach (AnimationState animState in Animation)
+				{
+					var name = animState.clip.name;
+					var value = name.Replace(healthStr, string.Empty).ToInt(-1);
+
+					if (value == -1)
+					{
+						continue;
+					}
+
+					animations.Add(value);
+				}
+
+				HealthAnimations = HealthAnimations ??= new();
+
+				foreach (var animation in animations.OrderByDescending(x => x))
+				{
+					HealthAnimations.Add(animation, $"health_{animation}");
+				}
+
+				Pool.FreeList(ref animations);
 			}
 
 			public void OnDestroy()
