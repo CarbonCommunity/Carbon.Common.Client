@@ -21,7 +21,10 @@ public class ServerMgr_ClientReady
 {
 	public static void Prefix(Message packet)
 	{
-		// OnCarbonClientReady
-		HookCaller.CallStaticHook(4004023948, packet.connection.ToCarbonClient() as CarbonClient);
+		if (packet.connection != null && packet.connection.ToCarbonClient() is CarbonClient client)
+		{
+			// OnCarbonClientReady
+			HookCaller.CallStaticHook(4004023948, client);
+		}
 	}
 }
