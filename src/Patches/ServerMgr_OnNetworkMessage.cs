@@ -20,15 +20,9 @@ public class ServerMgr_OnNetworkMessage
 {
 	public static bool Prefix(Message packet)
 	{
-		var position = packet.read.Position;
+		if (packet.type != CarbonClientManager.PACKET_ID) return true;
+		RPC.HandleRPCMessage(packet.connection, packet.read.UInt32(), packet);
+		return false;
 
-		if (packet.type == CarbonClientManager.PACKET_ID)
-		{
-			Carbon.Client.RPC.HandleRPCMessage(packet.connection, packet.read.UInt32(), packet);
-			return false;
-		}
-
-		packet.read.Position = position;
-		return true;
 	}
 }
