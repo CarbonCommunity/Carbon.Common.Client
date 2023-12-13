@@ -33,6 +33,11 @@ public class CarbonClient : ICarbonClient
 
 	public bool Send(RPC rpc, IPacket packet = default, bool bypassChecks = true)
 	{
+		if (!Client.ClientEnabled)
+		{
+			return false;
+		}
+
 		if (!bypassChecks && !IsValid()) return false;
 
 		try
