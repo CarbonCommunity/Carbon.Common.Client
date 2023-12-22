@@ -41,7 +41,7 @@ public class AddonManager : IDisposable
 	internal void ProcessEntity(BaseEntity entity, RustPrefab source)
 	{
 		entity.Spawn();
-		entity.enableSaving = false;
+		entity.EnableSaving(false);
 		entity.skinID = source.Entity.Skin;
 
 		if (source.Entity.Flags != 0)
