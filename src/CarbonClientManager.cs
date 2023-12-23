@@ -6,6 +6,8 @@ using Carbon.Client.Assets;
 using Carbon.Client.Contracts;
 using Carbon.Client.Packets;
 using Carbon.Client.SDK;
+using Carbon.Components;
+using Carbon.Extensions;
 using HarmonyLib;
 using Network;
 using UnityEngine;
@@ -137,6 +139,33 @@ public class CarbonClientManager : ICarbonClientManager
 		}
 	}
 
+	public void SendRequestsToAllPlayers(bool uninstallAll = true, bool loadingScreen = true)
+	{
+		foreach (var connection in BasePlayer.activePlayerList)
+		{
+			SendRequestToPlayer(connection.Connection, uninstallAll, loadingScreen);
+		}
+	}
+	public void SendRequestToPlayer(Connection connection, bool uninstallAll = true, bool loadingScreen = true)
+	{
+		if (connection == null)
+		{
+			return;
+		}
+
+		var client = connection.ToCarbonClient() as CarbonClient;
+		;
+		if (!client.HasCarbonClient)
+		{
+			return;
+		}
+
+		AddonManager.Instance.Deliver(client,
+			uninstallAll: uninstallAll,
+			loadingScreen: loadingScreen,
+			urls: Community.Runtime.ClientConfig.NetworkableAddons);
+	}
+
 	public void InstallAddons(string[] urls)
 	{
 		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs synchronously...");
@@ -145,13 +174,18 @@ public class CarbonClientManager : ICarbonClientManager
 		task.Wait();
 
 		AddonManager.Instance.Install(task.Result);
+
+		SendRequestsToAllPlayers();
 	}
 	public async void InstallAddonsAsync(string[] urls)
 	{
 		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs asynchronously...");
 
 		var addons = await AddonManager.Instance.LoadAddons(urls);
-		Community.Runtime.CorePlugin.persistence.StartCoroutine(AddonManager.Instance.InstallAsync(addons));
+		Community.Runtime.CorePlugin.persistence.StartCoroutine(AddonManager.Instance.InstallAsync(addons, () =>
+		{
+			SendRequestsToAllPlayers();
+		}));
 	}
 	public void UninstallAddons()
 	{

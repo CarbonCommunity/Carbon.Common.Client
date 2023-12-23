@@ -370,7 +370,7 @@ public class AddonManager : IDisposable
 			LoadingScreen = loadingScreen
 		});
 
-		Logger.Log($"Sent download request to {client.Connection} with {urls.Length:n0} addon URLs...");
+		Logger.Log($"{client.Connection} received addon download request");
 
 		client.Send("addondownloadurl", new AddonDownloadUrl
 		{
@@ -396,7 +396,7 @@ public class AddonManager : IDisposable
 
 		CreateScenePrefabs(false);
 	}
-	public IEnumerator InstallAsync(List<Addon> addons)
+	public IEnumerator InstallAsync(List<Addon> addons, Action callback = null)
 	{
 		foreach (var addon in addons)
 		{
