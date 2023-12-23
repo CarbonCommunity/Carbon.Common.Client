@@ -43,6 +43,11 @@ public struct RPC
 	}
 	public static void Init(params Type[] types )
 	{
+		if (!Client.ClientEnabled)
+		{
+			return;
+		}
+
 		foreach (var type in types)
 		{
 			foreach (var method in type.GetMethods(BindingFlags.NonPublic | BindingFlags.Static))

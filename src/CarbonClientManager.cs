@@ -28,6 +28,13 @@ public class CarbonClientManager : ICarbonClientManager
 	internal const string _PATCH_NAME = "com.carbon.clientpatch";
 	internal Harmony _PATCH;
 
+	public int AddonCount => AddonManager.Instance.LoadedAddons.Count;
+	public int AssetCount => AddonManager.Instance.LoadedAddons.Sum(x => x.Key.Assets.Count);
+	public int SpawnablePrefabsCount => AddonManager.Instance.Prefabs.Count;
+	public int PrefabsCount => AddonManager.Instance.CreatedPrefabs.Count;
+	public int RustPrefabsCount => AddonManager.Instance.CreatedRustPrefabs.Count;
+	public int EntityCount => AddonManager.Instance.CreatedEntities.Count;
+
 	public void ApplyPatch()
 	{
 		_PATCH?.UnpatchAll(_PATCH_NAME);
@@ -132,7 +139,7 @@ public class CarbonClientManager : ICarbonClientManager
 
 	public void InstallAddons(string[] urls)
 	{
-		Logger.Warn($" Downloading {urls.Length:n0} URLs synchronously...");
+		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs synchronously...");
 
 		var task = AddonManager.Instance.LoadAddons(urls);
 		task.Wait();
@@ -141,7 +148,7 @@ public class CarbonClientManager : ICarbonClientManager
 	}
 	public async void InstallAddonsAsync(string[] urls)
 	{
-		Logger.Warn($" Downloading {urls.Length:n0} URLs asynchronously...");
+		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs asynchronously...");
 
 		var addons = await AddonManager.Instance.LoadAddons(urls);
 		Community.Runtime.CorePlugin.persistence.StartCoroutine(AddonManager.Instance.InstallAsync(addons));
