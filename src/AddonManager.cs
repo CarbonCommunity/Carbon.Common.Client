@@ -9,9 +9,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Carbon.Client.Packets;
 using Carbon.Extensions;
 using Network;
+using Oxide.Core;
 using UnityEngine;
 
 namespace Carbon.Client.Assets;
@@ -22,12 +24,23 @@ public class AddonManager : IDisposable
 
 	public FacepunchBehaviour Persistence => Community.Runtime.CorePlugin.persistence;
 
-	public List<Addon> Installed { get; } = new();
+	public Dictionary<Addon, CacheAddon> Installed { get; } = new();
 	public Dictionary<string, CachePrefab> InstalledCache { get; } = new();
 
 	public List<GameObject> PrefabInstances { get; } = new();
 	public List<BaseEntity> EntityInstances { get; } = new();
 
+	public struct CacheAddon
+	{
+		public Asset Scene;
+		public Asset Models;
+		public string[] ScenePrefabs;
+
+		public bool HasScene()
+		{
+			return Scene != null && Scene != Models;
+		}
+	}
 	public struct CachePrefab
 	{
 		public GameObject Object;
@@ -333,7 +346,7 @@ public class AddonManager : IDisposable
 
 		foreach (var addon in Installed)
 		{
-			foreach (var asset in addon.Assets)
+			foreach (var asset in addon.Key.Assets)
 			{
 				try
 				{
@@ -341,7 +354,7 @@ public class AddonManager : IDisposable
 				}
 				catch (Exception ex)
 				{
-					Logger.Warn($"[AddonManager] Failed disposing of asset '{asset.Key}' (of addon {addon.Name}) ({ex.Message})\n{ex.StackTrace}");
+					Logger.Warn($"[AddonManager] Failed disposing of asset '{asset.Key}' (of addon {addon.Key.Name}) ({ex.Message})\n{ex.StackTrace}");
 				}
 			}
 		}
@@ -373,7 +386,25 @@ public class AddonManager : IDisposable
 				asset.Value.UnpackBundle();
 			}
 
-			Installed.Add(addon);
+			if (!Installed.ContainsKey(addon))
+			{
+				Installed.Add(addon, GetAddonCache(addon));
+			}
+		}
+	}
+	public IEnumerator InstallAsync(List<Addon> addons)
+	{
+		foreach (var addon in addons)
+		{
+			foreach (var asset in addon.Assets)
+			{
+				yield return asset.Value.UnpackBundleAsync();
+			}
+
+			if (!Installed.ContainsKey(addon))
+			{
+				Installed.Add(addon, GetAddonCache(addon));
+			}
 		}
 	}
 	public void Uninstall(bool prefabs = true, bool customPrefabs = true, bool entities = true)
@@ -393,7 +424,7 @@ public class AddonManager : IDisposable
 
 		foreach (var addon in Installed)
 		{
-			foreach (var asset in addon.Assets)
+			foreach (var asset in addon.Key.Assets)
 			{
 				try
 				{
@@ -401,12 +432,78 @@ public class AddonManager : IDisposable
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine($"Failed disposing asset '{asset.Key}' of addon {addon.Name} ({ex.Message})\n{ex.StackTrace}");
+					Console.WriteLine($"Failed disposing asset '{asset.Key}' of addon {addon.Key.Name} ({ex.Message})\n{ex.StackTrace}");
 				}
 			}
 		}
 
 		Installed.Clear();
+	}
+
+	public async Task<List<Addon>> LoadAddons(string[] addons)
+	{
+		var addonResults = new List<Addon>();
+
+		foreach (var addon in addons)
+		{
+			if (addon.StartsWith("http"))
+			{
+				await Community.Runtime.CorePlugin.webrequest.EnqueueDataAsync(addon, null, (code, data) =>
+				{
+					Logger.Warn($" Downloaded {ByteEx.Format(data.Length, stringFormat: "{0}{1}").ToLower()} from {addon}...");
+
+					try
+					{
+						addonResults.Add(Addon.ImportFromBuffer(data));
+					}
+					catch(Exception ex)
+					{
+						Logger.Error($"Addon file protocol out of date or invalid.", ex);
+					}
+				}, Community.Runtime.CorePlugin);
+			}
+			else
+			{
+				if (OsEx.File.Exists(addon))
+				{
+
+					try
+					{
+						var data = OsEx.File.ReadBytes(addon);
+						Logger.Warn($" Loaded {ByteEx.Format(data.Length, stringFormat: "{0}{1}").ToLower()} locally from {addon}...");
+						addonResults.Add(Addon.ImportFromBuffer(data));
+					}
+					catch(Exception ex)
+					{
+						Logger.Error($"Addon file protocol out of date or invalid.", ex);
+					}
+				}
+				else
+				{
+					Logger.Warn($" Couldn't find Addon file at path: {addon}");
+				}
+			}
+		}
+
+		return addonResults;
+	}
+
+	public CacheAddon GetAddonCache(Addon addon)
+	{
+		CacheAddon cache = default;
+		cache.Scene = addon.Assets.FirstOrDefault().Value;
+		cache.Models = addon.Assets.LastOrDefault().Value;
+
+		if (cache.Scene == cache.Models)
+		{
+			cache.Scene = null;
+		}
+		else
+		{
+			cache.ScenePrefabs = cache.Scene.CachedBundle.GetAllAssetNames();
+		}
+
+		return cache;
 	}
 
 	public void ClearPrefabs()

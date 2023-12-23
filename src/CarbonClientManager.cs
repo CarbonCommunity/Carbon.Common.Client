@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Carbon.Client.Assets;
 using Carbon.Client.Contracts;
 using Carbon.Client.Packets;
 using Carbon.Client.SDK;
 using HarmonyLib;
 using Network;
+using UnityEngine;
 
 /*
  *
@@ -125,6 +128,27 @@ public class CarbonClientManager : ICarbonClientManager
 		{
 			client.Value.Send("oldrecoil", packet);
 		}
+	}
+
+	public void InstallAddons(string[] urls)
+	{
+		Logger.Warn($" Downloading {urls.Length:n0} URLs synchronously...");
+
+		var task = AddonManager.Instance.LoadAddons(urls);
+		task.Wait();
+
+		AddonManager.Instance.Install(task.Result);
+	}
+	public async void InstallAddonsAsync(string[] urls)
+	{
+		Logger.Warn($" Downloading {urls.Length:n0} URLs asynchronously...");
+
+		var addons = await AddonManager.Instance.LoadAddons(urls);
+		Community.Runtime.CorePlugin.persistence.StartCoroutine(AddonManager.Instance.InstallAsync(addons));
+	}
+	public void UninstallAddons()
+	{
+		AddonManager.Instance.Uninstall();
 	}
 
 	public void DisposeClient(ICarbonClient client)
