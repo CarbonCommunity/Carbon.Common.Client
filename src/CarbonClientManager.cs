@@ -73,7 +73,7 @@ public class CarbonClientManager : ICarbonClientManager
 			return;
 		}
 
-		using var packet = RPCList.Get();
+		using var packet = RPCList.SERVER_Get();
 		client.Send("ping", packet, bypassChecks: true);
 	}
 	public void OnDisconnected(Connection connection)
