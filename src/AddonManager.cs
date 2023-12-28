@@ -391,6 +391,7 @@ public class AddonManager : IDisposable
 
 			if (!LoadedAddons.ContainsKey(addon))
 			{
+				Logger.Log($" C4C: Installed addon '{addon.Name} v{addon.Version}' by {addon.Author}");
 				LoadedAddons.Add(addon, GetAddonCache(addon));
 			}
 		}
@@ -408,6 +409,7 @@ public class AddonManager : IDisposable
 
 			if (!LoadedAddons.ContainsKey(addon))
 			{
+				Logger.Log($" C4C: Installed addon '{addon.Name} v{addon.Version}' by {addon.Author}");
 				LoadedAddons.Add(addon, GetAddonCache(addon));
 			}
 		}
@@ -548,7 +550,7 @@ public class AddonManager : IDisposable
 		CacheAddon cache = default;
 		cache.Scene = addon.Assets.FirstOrDefault(x => x.Key == "scene").Value;
 		cache.Models = addon.Assets.FirstOrDefault(x => x.Key == "models").Value;
-		
+
 		if(cache.Scene != null)
 		{
 			cache.ScenePrefabs = cache.Scene.CachedBundle.GetAllAssetNames();

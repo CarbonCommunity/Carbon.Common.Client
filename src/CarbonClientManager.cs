@@ -141,9 +141,9 @@ public class CarbonClientManager : ICarbonClientManager
 
 	public void SendRequestsToAllPlayers(bool uninstallAll = true, bool loadingScreen = true)
 	{
-		foreach (var connection in BasePlayer.activePlayerList)
+		foreach (var player in BasePlayer.activePlayerList)
 		{
-			SendRequestToPlayer(connection.Connection, uninstallAll, loadingScreen);
+			SendRequestToPlayer(player.Connection, uninstallAll, loadingScreen);
 		}
 	}
 	public void SendRequestToPlayer(Connection connection, bool uninstallAll = true, bool loadingScreen = true)
@@ -154,7 +154,7 @@ public class CarbonClientManager : ICarbonClientManager
 		}
 
 		var client = connection.ToCarbonClient() as CarbonClient;
-		;
+
 		if (!client.HasCarbonClient)
 		{
 			return;
