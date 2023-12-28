@@ -490,7 +490,7 @@ public class AddonManager : IDisposable
 					// OnCustomScenePrefab(GameObject, string, CacheAddon, Addon)
 					HookCaller.CallStaticHook(3209444769, prefabInstance, prefab, addon.Value, addon.Key);
 
-					Logger.Warn($" C4C: Created prefab '{prefab}'");
+					Logger.Debug($" C4C: Created prefab '{prefab}'");
 				}
 			}
 		}
