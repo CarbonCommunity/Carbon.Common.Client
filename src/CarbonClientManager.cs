@@ -179,14 +179,13 @@ public class CarbonClientManager : ICarbonClientManager
 			urls: Community.Runtime.ClientConfig.NetworkableAddons);
 	}
 
-	public void InstallAddons(string[] urls)
+	public async void InstallAddons(string[] urls)
 	{
 		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs synchronously...");
 
-		var task = AddonManager.Instance.LoadAddons(urls);
-		task.Wait();
+		var addons = await AddonManager.Instance.LoadAddons(urls);
 
-		AddonManager.Instance.Install(task.Result);
+		AddonManager.Instance.Install(addons);
 
 		SendRequestsToAllPlayers();
 	}
