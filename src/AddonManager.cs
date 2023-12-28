@@ -413,6 +413,8 @@ public class AddonManager : IDisposable
 		}
 
 		CreateScenePrefabs(true);
+
+		callback?.Invoke();
 	}
 	public void Uninstall(bool prefabs = true, bool rustPrefabs = true, bool customPrefabs = true, bool entities = true)
 	{
@@ -544,14 +546,10 @@ public class AddonManager : IDisposable
 	public CacheAddon GetAddonCache(Addon addon)
 	{
 		CacheAddon cache = default;
-		cache.Scene = addon.Assets.FirstOrDefault().Value;
-		cache.Models = addon.Assets.LastOrDefault().Value;
-
-		if (cache.Scene == cache.Models)
-		{
-			cache.Scene = null;
-		}
-		else
+		cache.Scene = addon.Assets.FirstOrDefault(x => x.Key == "scene").Value;
+		cache.Models = addon.Assets.FirstOrDefault(x => x.Key == "models").Value;
+		
+		if(cache.Scene != null)
 		{
 			cache.ScenePrefabs = cache.Scene.CachedBundle.GetAllAssetNames();
 		}
