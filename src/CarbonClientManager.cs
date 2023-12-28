@@ -37,6 +37,19 @@ public class CarbonClientManager : ICarbonClientManager
 	public int RustPrefabsCount => AddonManager.Instance.CreatedRustPrefabs.Count;
 	public int EntityCount => AddonManager.Instance.CreatedEntities.Count;
 
+	public void Init()
+	{
+		Community.Runtime.CorePlugin.timer.Every(2f, () =>
+		{
+			foreach (var client in Clients)
+			{
+				if (client.Value.HasCarbonClient && client.Value.IsConnected && client.Value.IsDownloadingAddons && client.Value.Player != null)
+				{
+					client.Value.Player.ClientKeepConnectionAlive(default);
+				}
+			}
+		});
+	}
 	public void ApplyPatch()
 	{
 		_PATCH?.UnpatchAll(_PATCH_NAME);

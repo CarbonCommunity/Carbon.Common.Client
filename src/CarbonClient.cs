@@ -26,6 +26,8 @@ public class CarbonClient : ICarbonClient
 	public bool IsConnected => Connection != null && Connection.active;
 	public bool HasCarbonClient { get; set; }
 
+	public bool IsDownloadingAddons { get; set; }
+
 	public int ScreenWidth { get; set; }
 	public int ScreenHeight { get; set; }
 
@@ -176,11 +178,14 @@ public class CarbonClient : ICarbonClient
 	}
 	public void OnDisconnect()
 	{
+		IsDownloadingAddons = false;
+
 		// OnCarbonClientLeft
 		HookCaller.CallStaticHook(978897282, this);
 	}
 	public void Dispose()
 	{
+		IsDownloadingAddons = false;
 		Player = null;
 		Connection = null;
 	}
