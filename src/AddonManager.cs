@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Carbon.Client.Packets;
 using Carbon.Extensions;
@@ -501,7 +502,9 @@ public class AddonManager : IDisposable
 		}
 	}
 
-	public async Task<List<Addon>> LoadAddons(string[] addons)
+	internal WebClient _client = new();
+
+	public async Task<List<Addon>> LoadAddons(string[] addons, bool async = true)
 	{
 		var addonResults = new List<Addon>();
 
@@ -509,19 +512,33 @@ public class AddonManager : IDisposable
 		{
 			if (addon.StartsWith("http"))
 			{
-				await Community.Runtime.CorePlugin.webrequest.EnqueueDataAsync(addon, null, (code, data) =>
+				if (async)
 				{
-					Logger.Warn($" C4C: Content downloaded '{Path.GetFileName(addon)}' ({ByteEx.Format(data.Length, stringFormat: "{0}{1}").ToLower()})");
+					await Community.Runtime.CorePlugin.webrequest.EnqueueDataAsync(addon, null, (code, data) =>
+					{
+						OnData(data);
+					}, Community.Runtime.CorePlugin);
+				}
+				else
+				{
+					var data = _client.DownloadData(addon);
+					OnData(data);
+				}
+
+				void OnData(byte[] data)
+				{
+					Logger.Warn(
+						$" C4C: Content downloaded '{Path.GetFileName(addon)}' ({ByteEx.Format(data.Length, stringFormat: "{0}{1}").ToLower()})");
 
 					try
 					{
 						addonResults.Add(Addon.ImportFromBuffer(data));
 					}
-					catch(Exception ex)
+					catch (Exception ex)
 					{
 						Logger.Error($" C4C: Addon file protocol out of date or invalid.", ex);
 					}
-				}, Community.Runtime.CorePlugin);
+				}
 			}
 			else
 			{

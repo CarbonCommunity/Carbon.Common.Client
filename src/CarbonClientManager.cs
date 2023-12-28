@@ -110,6 +110,11 @@ public class CarbonClientManager : ICarbonClientManager
 			Clients.Add(connection, client = Make(connection));
 		}
 
+		if (client.Player == null)
+		{
+			client.Player = BasePlayer.FindAwakeOrSleeping(client.Connection.userid.ToString());
+		}
+
 		return client;
 	}
 	public ICarbonClient Get(BasePlayer player)
@@ -183,7 +188,7 @@ public class CarbonClientManager : ICarbonClientManager
 	{
 		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs synchronously...");
 
-		var addons = await AddonManager.Instance.LoadAddons(urls);
+		var addons = await AddonManager.Instance.LoadAddons(urls, async: false);
 
 		AddonManager.Instance.Install(addons);
 
@@ -193,7 +198,7 @@ public class CarbonClientManager : ICarbonClientManager
 	{
 		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs asynchronously...");
 
-		var addons = await AddonManager.Instance.LoadAddons(urls);
+		var addons = await AddonManager.Instance.LoadAddons(urls, async: true);
 		Community.Runtime.CorePlugin.persistence.StartCoroutine(AddonManager.Instance.InstallAsync(addons, () =>
 		{
 			SendRequestsToAllPlayers();
