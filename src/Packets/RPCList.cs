@@ -52,10 +52,6 @@ public class RPCList : BasePacket
 		{
 			RPC.Get(item);
 		}
-		foreach (var item in RpcIds)
-		{
-			RPC.Get(item);
-		}
 
 		foreach(var item in RPC.rpcList)
 		{
