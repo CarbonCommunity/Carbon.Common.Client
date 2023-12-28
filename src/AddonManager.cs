@@ -164,6 +164,11 @@ public class AddonManager : IDisposable
 	}
 	public void CreateRustPrefabs(IEnumerable<RustPrefab> prefabs)
 	{
+		if (prefabs == null)
+		{
+			return;
+		}
+
 		foreach(var prefab in prefabs)
 		{
 			CreateRustPrefab(prefab);
@@ -494,7 +499,6 @@ public class AddonManager : IDisposable
 				}
 			}
 		}
-
 	}
 
 	public async Task<List<Addon>> LoadAddons(string[] addons)
@@ -523,7 +527,6 @@ public class AddonManager : IDisposable
 			{
 				if (OsEx.File.Exists(addon))
 				{
-
 					try
 					{
 						var data = OsEx.File.ReadBytes(addon);
