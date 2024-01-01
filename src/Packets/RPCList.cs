@@ -27,7 +27,7 @@ public class RPCList : BasePacket
 	[ProtoMember(4)]
 	public bool OldRecoil { get; set; }
 
-	public static RPCList Get()
+	public static RPCList SERVER_Get()
 	{
 		return new RPCList()
 		{
@@ -37,14 +37,18 @@ public class RPCList : BasePacket
 			OldRecoil = Client.OldRecoil
 		};
 	}
+	public static RPCList CLIENT_Get()
+	{
+		return new RPCList()
+		{
+			RpcIds = RPC.rpcList.Select(x => x.Id).ToArray(),
+			RpcNames = RPC.rpcList.Select(x => x.Name).ToArray(),
+		};
+	}
 
 	public void Sync()
 	{
 		foreach (var item in RpcNames)
-		{
-			RPC.Get(item);
-		}
-		foreach (var item in RpcIds)
 		{
 			RPC.Get(item);
 		}

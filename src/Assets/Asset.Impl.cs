@@ -65,7 +65,7 @@ public partial class Asset : IDisposable
 		{
 			var processedAssetPath = asset.ToLower();
 
-			if (!AddonManager.Instance.InstalledCache.ContainsKey(processedAssetPath))
+			if (!AddonManager.Instance.Prefabs.ContainsKey(processedAssetPath))
 			{
 				AddonManager.CachePrefab cache = default;
 				cache.Object = CachedBundle.LoadAsset<GameObject>(asset);
@@ -77,7 +77,7 @@ public partial class Asset : IDisposable
 					cache.RustPrefabs = rustPrefabs;
 				}
 
-				AddonManager.Instance.InstalledCache.Add(processedAssetPath, cache);
+				AddonManager.Instance.Prefabs.Add(processedAssetPath, cache);
 			}
 		}
 	}
