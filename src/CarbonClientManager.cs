@@ -8,9 +8,11 @@ using Carbon.Client.Packets;
 using Carbon.Client.SDK;
 using Carbon.Components;
 using Carbon.Extensions;
+using Carbon.SDK.Client;
 using HarmonyLib;
 using Network;
 using UnityEngine;
+using ClientOptions = Carbon.Client.Packets.ClientOptions;
 
 /*
  *
@@ -147,13 +149,18 @@ public class CarbonClientManager : ICarbonClientManager
 		return client.HasCarbonClient;
 	}
 
-	public void NetworkOldRecoil(bool oldRecoil)
+	public void NetworkClientConfiguration(Carbon.SDK.Client.ClientOptions options)
 	{
-		using var packet = new OldRecoil { Enable = oldRecoil };
+		using var packet = new ClientOptions
+		{
+			UseOldRecoil = options.UseOldRecoil,
+			ClientGravity = options.ClientGravity,
+			PlayerGravity = options.PlayerGravity
+		};
 
 		foreach (var client in Clients.Where(x => x.Value.IsConnected && x.Value.HasCarbonClient))
 		{
-			client.Value.Send("oldrecoil", packet);
+			client.Value.Send("clientoptions", packet);
 		}
 	}
 
@@ -181,7 +188,7 @@ public class CarbonClientManager : ICarbonClientManager
 		AddonManager.Instance.Deliver(client,
 			uninstallAll: uninstallAll,
 			loadingScreen: loadingScreen,
-			urls: Community.Runtime.ClientConfig.NetworkableAddons);
+			urls: Community.Runtime.ClientConfig.NetworkedAddonsCache);
 	}
 
 	public async void InstallAddons(string[] urls)
