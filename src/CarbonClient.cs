@@ -35,7 +35,7 @@ public class CarbonClient : ICarbonClient
 
 	public bool Send(RPC rpc, IPacket packet = default, bool bypassChecks = true)
 	{
-		if (!Client.ClientEnabled)
+		if (!Community.Runtime.ClientConfig.Enabled)
 		{
 			return false;
 		}
