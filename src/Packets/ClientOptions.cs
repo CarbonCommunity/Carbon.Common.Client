@@ -16,5 +16,5 @@ public class ClientOptions : BasePacket
 	public bool UseOldRecoil = false;
 
 	[ProtoMember(2)]
-	public float ClientGravity = -1f;
+	public float ClientGravity;
 }
