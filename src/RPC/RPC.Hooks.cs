@@ -3,7 +3,7 @@ using Oxide.Core;
 
 /*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2023 Carbon Community
  * All rights reserved.
  *
  */
@@ -22,11 +22,19 @@ public class RPCHooks
 		}
 
 		var result = client.Receive<RPCList>(message);
-		result.Sync();
+		// result.Sync();
 		result.Dispose();
 
 		client.HasCarbonClient = true;
 		client.Send("clientinfo");
+
+		using var options = new ClientOptions
+		{
+			UseOldRecoil = Community.Runtime.ClientConfig.Client.UseOldRecoil,
+			ClientGravity = Community.Runtime.ClientConfig.Client.ClientGravity
+		};
+		client.Send("clientoptions", options);
+
 		Logger.Log($"{client.Connection} joined with Carbon client");
 
 		client.OnConnected();
