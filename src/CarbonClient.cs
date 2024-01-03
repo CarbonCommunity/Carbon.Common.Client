@@ -38,7 +38,7 @@ public class CarbonClient : ICarbonClient
 			return false;
 		}
 
-		if (!checks && !IsValid()) return false;
+		if (checks && !IsValid()) return false;
 
 		try
 		{
