@@ -17,7 +17,4 @@ public class ClientOptions : BasePacket
 
 	[ProtoMember(2)]
 	public float ClientGravity = -1f;
-
-	[ProtoMember(3)]
-	public float PlayerGravity = -1f;
 }

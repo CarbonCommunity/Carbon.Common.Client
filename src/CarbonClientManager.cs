@@ -89,7 +89,7 @@ public class CarbonClientManager : ICarbonClientManager
 		}
 
 		using var packet = RPCList.SERVER_Get();
-		client.Send("ping", packet, bypassChecks: true);
+		client.Send("ping", packet, checks: false);
 	}
 	public void OnDisconnected(Connection connection)
 	{
@@ -154,8 +154,7 @@ public class CarbonClientManager : ICarbonClientManager
 		using var packet = new ClientOptions
 		{
 			UseOldRecoil = options.UseOldRecoil,
-			ClientGravity = options.ClientGravity,
-			PlayerGravity = options.PlayerGravity
+			ClientGravity = options.ClientGravity
 		};
 
 		foreach (var client in Clients.Where(x => x.Value.IsConnected && x.Value.HasCarbonClient))
