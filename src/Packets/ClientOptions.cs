@@ -10,8 +10,11 @@ using ProtoBuf;
 namespace Carbon.Client.Packets;
 
 [ProtoContract]
-public class OldRecoil : BasePacket
+public class ClientOptions : BasePacket
 {
 	[ProtoMember(1)]
-	public bool Enable { get; set; }
+	public bool UseOldRecoil = false;
+
+	[ProtoMember(2)]
+	public float ClientGravity;
 }

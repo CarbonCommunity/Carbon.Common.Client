@@ -8,11 +8,16 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Threading.Tasks;
 using Carbon.Client.Packets;
 using Carbon.Extensions;
 using Network;
+using Oxide.Core;
 using UnityEngine;
+using UnityEngine.Networking;
 
 namespace Carbon.Client.Assets;
 
@@ -22,12 +27,24 @@ public class AddonManager : IDisposable
 
 	public FacepunchBehaviour Persistence => Community.Runtime.CorePlugin.persistence;
 
-	public List<Addon> Installed { get; } = new();
-	public Dictionary<string, CachePrefab> InstalledCache { get; } = new();
+	public Dictionary<Addon, CacheAddon> LoadedAddons { get; } = new();
+	public Dictionary<string, CachePrefab> Prefabs { get; } = new();
 
-	public List<GameObject> PrefabInstances { get; } = new();
-	public List<BaseEntity> EntityInstances { get; } = new();
+	public List<GameObject> CreatedPrefabs { get; } = new();
+	public List<GameObject> CreatedRustPrefabs { get; } = new();
+	public List<BaseEntity> CreatedEntities { get; } = new();
 
+	public struct CacheAddon
+	{
+		public Asset Scene;
+		public Asset Models;
+		public string[] ScenePrefabs;
+
+		public bool HasScene()
+		{
+			return Scene != null && Scene != Models;
+		}
+	}
 	public struct CachePrefab
 	{
 		public GameObject Object;
@@ -41,7 +58,7 @@ public class AddonManager : IDisposable
 	internal void ProcessEntity(BaseEntity entity, RustPrefab source)
 	{
 		entity.Spawn();
-		entity.enableSaving = false;
+		entity.EnableSaving(false);
 		entity.skinID = source.Entity.Skin;
 
 		if (source.Entity.Flags != 0)
@@ -108,7 +125,7 @@ public class AddonManager : IDisposable
 	}
 	public GameObject CreateFromCache(string path)
 	{
-		if (InstalledCache.TryGetValue(path, out var prefab))
+		if (Prefabs.TryGetValue(path, out var prefab))
 		{
 			CreateRustPrefabs(prefab.RustPrefabs);
 			return CreateBasedOnImpl(prefab.Object);
@@ -134,12 +151,12 @@ public class AddonManager : IDisposable
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			ProcessEntity(entityInstance, prefab);
 
-			EntityInstances.Add(entityInstance);
+			CreatedEntities.Add(entityInstance);
 		}
 		else
 		{
 			var instance = GameManager.server.CreatePrefab(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
-			PrefabInstances.Add(instance);
+			CreatedRustPrefabs.Add(instance);
 
 			return instance;
 		}
@@ -148,6 +165,11 @@ public class AddonManager : IDisposable
 	}
 	public void CreateRustPrefabs(IEnumerable<RustPrefab> prefabs)
 	{
+		if (prefabs == null)
+		{
+			return;
+		}
+
 		foreach(var prefab in prefabs)
 		{
 			CreateRustPrefab(prefab);
@@ -163,7 +185,7 @@ public class AddonManager : IDisposable
 			return;
 		}
 
-		if (InstalledCache.TryGetValue(path, out var prefab))
+		if (Prefabs.TryGetValue(path, out var prefab))
 		{
 			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab.Object, callback));
 			CreateRustPrefabsAsync(prefab.RustPrefabs);
@@ -225,7 +247,7 @@ public class AddonManager : IDisposable
 			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			ProcessEntity(entityInstance, prefab);
 
-			EntityInstances.Add(entityInstance);
+			CreatedEntities.Add(entityInstance);
 		}
 		else
 		{
@@ -256,7 +278,7 @@ public class AddonManager : IDisposable
 		}
 
 		var result = UnityEngine.Object.Instantiate(source);
-		PrefabInstances.Add(result);
+		CreatedPrefabs.Add(result);
 
 		FixName(result);
 
@@ -267,7 +289,7 @@ public class AddonManager : IDisposable
 		var result = (GameObject)null;
 
 		yield return result = UnityEngine.Object.Instantiate(gameObject);
-		PrefabInstances.Add(result);
+		CreatedPrefabs.Add(result);
 
 		FixName(result);
 
@@ -293,7 +315,7 @@ public class AddonManager : IDisposable
 				var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 				ProcessEntity(entityInstance, prefab);
 
-				EntityInstances.Add(entityInstance);
+				CreatedEntities.Add(entityInstance);
 			}
 			else
 			{
@@ -301,7 +323,7 @@ public class AddonManager : IDisposable
 
 				yield return instance = GameManager.server.CreatePrefab(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
 
-				PrefabInstances.Add(instance);
+				CreatedRustPrefabs.Add(instance);
 			}
 		}
 	}
@@ -317,7 +339,7 @@ public class AddonManager : IDisposable
 
 	public void Dispose()
 	{
-		foreach (var prefab in PrefabInstances)
+		foreach (var prefab in CreatedPrefabs)
 		{
 			try
 			{
@@ -331,9 +353,9 @@ public class AddonManager : IDisposable
 			}
 		}
 
-		foreach (var addon in Installed)
+		foreach (var addon in LoadedAddons)
 		{
-			foreach (var asset in addon.Assets)
+			foreach (var asset in addon.Key.Assets)
 			{
 				try
 				{
@@ -341,7 +363,7 @@ public class AddonManager : IDisposable
 				}
 				catch (Exception ex)
 				{
-					Logger.Warn($"[AddonManager] Failed disposing of asset '{asset.Key}' (of addon {addon.Name}) ({ex.Message})\n{ex.StackTrace}");
+					Logger.Warn($"[AddonManager] Failed disposing of asset '{asset.Key}' (of addon {addon.Key.Name}) ({ex.Message})\n{ex.StackTrace}");
 				}
 			}
 		}
@@ -355,7 +377,7 @@ public class AddonManager : IDisposable
 			LoadingScreen = loadingScreen
 		});
 
-		Logger.Log($"Sent download request to {client.Connection} with {urls.Length:n0} addon URLs...");
+		Logger.Log($"{client.Connection} received addon download request");
 
 		client.Send("addondownloadurl", new AddonDownloadUrl
 		{
@@ -373,27 +395,62 @@ public class AddonManager : IDisposable
 				asset.Value.UnpackBundle();
 			}
 
-			Installed.Add(addon);
+			if (!LoadedAddons.ContainsKey(addon))
+			{
+				Logger.Log($" C4C: Installed addon '{addon.Name} v{addon.Version}' by {addon.Author}");
+				LoadedAddons.Add(addon, GetAddonCache(addon));
+			}
 		}
+
+		CreateScenePrefabs(false);
 	}
-	public void Uninstall(bool prefabs = true, bool customPrefabs = true, bool entities = true)
+	public IEnumerator InstallAsync(List<Addon> addons, Action callback = null)
 	{
+		foreach (var addon in addons)
+		{
+			foreach (var asset in addon.Assets)
+			{
+				yield return asset.Value.UnpackBundleAsync();
+			}
+
+			if (!LoadedAddons.ContainsKey(addon))
+			{
+				Logger.Log($" C4C: Installed addon '{addon.Name} v{addon.Version}' by {addon.Author}");
+				LoadedAddons.Add(addon, GetAddonCache(addon));
+			}
+		}
+
+		CreateScenePrefabs(true);
+
+		callback?.Invoke();
+	}
+	public void Uninstall(bool prefabs = true, bool rustPrefabs = true, bool customPrefabs = true, bool entities = true)
+	{
+		if (rustPrefabs)
+		{
+			if(CreatedRustPrefabs.Count != 0) Console.WriteLine($" C4C: Cleared {CreatedRustPrefabs.Count:n0} Rust {CreatedRustPrefabs.Count.Plural("prefab", "prefabs")}");
+			ClearRustPrefabs();
+		}
 		if (prefabs)
 		{
+			if(CreatedPrefabs.Count != 0) Console.WriteLine($" C4C: Cleared {CreatedPrefabs.Count:n0} {CreatedPrefabs.Count.Plural("prefab", "prefabs")}");
 			ClearPrefabs();
 		}
 		if (customPrefabs)
 		{
+			if(Prefabs.Count != 0) Console.WriteLine($" C4C: Cleared {Prefabs.Count:n0} custom prefab cache {Prefabs.Count.Plural("element", "elements")}");
 			ClearCustomPrefabs();
 		}
 		if (entities)
 		{
+			if(CreatedEntities.Count != 0) Console.WriteLine($" C4C: Cleared {CreatedEntities.Count:n0} {CreatedEntities.Count.Plural("entity", "entities")}");
 			ClearEntities();
 		}
 
-		foreach (var addon in Installed)
+		if(LoadedAddons.Count != 0) Console.WriteLine($" C4C: Done disposing total of {LoadedAddons.Count:n0} {LoadedAddons.Count.Plural("addon", "addons")} with {LoadedAddons.Sum(x => x.Key.Assets.Count):n0} assets from memory");
+		foreach (var addon in LoadedAddons)
 		{
-			foreach (var asset in addon.Assets)
+			foreach (var asset in addon.Key.Assets)
 			{
 				try
 				{
@@ -401,17 +458,130 @@ public class AddonManager : IDisposable
 				}
 				catch (Exception ex)
 				{
-					Console.WriteLine($"Failed disposing asset '{asset.Key}' of addon {addon.Name} ({ex.Message})\n{ex.StackTrace}");
+					Console.WriteLine($" C4C: Failed disposing asset '{asset.Key}' of addon {addon.Key.Name} ({ex.Message})\n{ex.StackTrace}");
 				}
 			}
 		}
 
-		Installed.Clear();
+		LoadedAddons.Clear();
+	}
+
+	public void CreateScenePrefabs(bool async)
+	{
+		foreach (var addon in LoadedAddons)
+		{
+			if (addon.Value.ScenePrefabs == null) continue;
+
+			foreach (var prefab in addon.Value.ScenePrefabs)
+			{
+				if (async)
+				{
+					CreateFromCacheAsync(prefab, prefabInstance =>
+					{
+						OnPrefabInstanceCreated(prefabInstance);
+					});
+				}
+				else
+				{
+					OnPrefabInstanceCreated(CreateFromCache(prefab));
+				}
+
+				void OnPrefabInstanceCreated(GameObject prefabInstance)
+				{
+					if (prefabInstance == null)
+					{
+						return;
+					}
+
+					// OnCustomScenePrefab(GameObject, string, CacheAddon, Addon)
+					HookCaller.CallStaticHook(3209444769, prefabInstance, prefab, addon.Value, addon.Key);
+
+					Logger.Debug($" C4C: Created prefab '{prefab}'");
+				}
+			}
+		}
+	}
+
+	internal WebClient _client = new();
+
+	public async Task<List<Addon>> LoadAddons(string[] addons, bool async = true)
+	{
+		var addonResults = new List<Addon>();
+
+		foreach (var addon in addons)
+		{
+			if (addon.StartsWith("http"))
+			{
+				if (async)
+				{
+					await Community.Runtime.CorePlugin.webrequest.EnqueueDataAsync(addon, null, (code, data) =>
+					{
+						OnData(data);
+					}, Community.Runtime.CorePlugin);
+				}
+				else
+				{
+					var data = _client.DownloadData(addon);
+					OnData(data);
+				}
+
+				void OnData(byte[] data)
+				{
+					Logger.Warn(
+						$" C4C: Content downloaded '{Path.GetFileName(addon)}' ({ByteEx.Format(data.Length, stringFormat: "{0}{1}").ToLower()})");
+
+					try
+					{
+						addonResults.Add(Addon.ImportFromBuffer(data));
+					}
+					catch (Exception ex)
+					{
+						Logger.Error($" C4C: Addon file protocol out of date or invalid.", ex);
+					}
+				}
+			}
+			else
+			{
+				if (OsEx.File.Exists(addon))
+				{
+					try
+					{
+						var data = OsEx.File.ReadBytes(addon);
+						Logger.Warn($" C4C: Content loaded locally '{Path.GetFileName(addon)}' ({ByteEx.Format(data.Length, stringFormat: "{0}{1}").ToLower()})");
+						addonResults.Add(Addon.ImportFromBuffer(data));
+					}
+					catch(Exception ex)
+					{
+						Logger.Error($" C4C: Addon file protocol out of date or invalid.", ex);
+					}
+				}
+				else
+				{
+					Logger.Warn($" C4C: Couldn't find Addon file at path: {addon}");
+				}
+			}
+		}
+
+		return addonResults;
+	}
+
+	public CacheAddon GetAddonCache(Addon addon)
+	{
+		CacheAddon cache = default;
+		cache.Scene = addon.Assets.FirstOrDefault(x => x.Key == "scene").Value;
+		cache.Models = addon.Assets.FirstOrDefault(x => x.Key == "models").Value;
+
+		if(cache.Scene != null)
+		{
+			cache.ScenePrefabs = cache.Scene.CachedBundle.GetAllAssetNames();
+		}
+
+		return cache;
 	}
 
 	public void ClearPrefabs()
 	{
-		foreach (var prefab in PrefabInstances)
+		foreach (var prefab in CreatedPrefabs)
 		{
 			try
 			{
@@ -423,11 +593,27 @@ public class AddonManager : IDisposable
 			}
 		}
 
-		PrefabInstances.Clear();
+		CreatedPrefabs.Clear();
+	}
+	public void ClearRustPrefabs()
+	{
+		foreach (var prefab in CreatedRustPrefabs)
+		{
+			try
+			{
+				UnityEngine.Object.Destroy(prefab);
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Failed disposing a Rust prefab ({ex.Message})\n{ex.StackTrace}");
+			}
+		}
+
+		CreatedRustPrefabs.Clear();
 	}
 	public void ClearCustomPrefabs()
 	{
-		foreach (var prefab in InstalledCache)
+		foreach (var prefab in Prefabs)
 		{
 			try
 			{
@@ -439,11 +625,11 @@ public class AddonManager : IDisposable
 			}
 		}
 
-		InstalledCache.Clear();
+		Prefabs.Clear();
 	}
 	public void ClearEntities()
 	{
-		foreach (var entity in EntityInstances)
+		foreach (var entity in CreatedEntities)
 		{
 			try
 			{
@@ -458,6 +644,6 @@ public class AddonManager : IDisposable
 			}
 		}
 
-		EntityInstances.Clear();
+		CreatedEntities.Clear();
 	}
 }

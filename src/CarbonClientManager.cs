@@ -1,11 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
+using Carbon.Client.Assets;
 using Carbon.Client.Contracts;
 using Carbon.Client.Packets;
 using Carbon.Client.SDK;
+using Carbon.Components;
+using Carbon.Extensions;
+using Carbon.SDK.Client;
 using HarmonyLib;
 using Network;
+using UnityEngine;
+using ClientOptions = Carbon.Client.Packets.ClientOptions;
 
 /*
  *
@@ -25,6 +32,26 @@ public class CarbonClientManager : ICarbonClientManager
 	internal const string _PATCH_NAME = "com.carbon.clientpatch";
 	internal Harmony _PATCH;
 
+	public int AddonCount => AddonManager.Instance.LoadedAddons.Count;
+	public int AssetCount => AddonManager.Instance.LoadedAddons.Sum(x => x.Key.Assets.Count);
+	public int SpawnablePrefabsCount => AddonManager.Instance.Prefabs.Count;
+	public int PrefabsCount => AddonManager.Instance.CreatedPrefabs.Count;
+	public int RustPrefabsCount => AddonManager.Instance.CreatedRustPrefabs.Count;
+	public int EntityCount => AddonManager.Instance.CreatedEntities.Count;
+
+	public void Init()
+	{
+		Community.Runtime.CorePlugin.timer.Every(2f, () =>
+		{
+			foreach (var client in Clients)
+			{
+				if (client.Value.HasCarbonClient && client.Value.IsConnected && client.Value.IsDownloadingAddons && client.Value.Player != null)
+				{
+					client.Value.Player.ClientKeepConnectionAlive(default);
+				}
+			}
+		});
+	}
 	public void ApplyPatch()
 	{
 		_PATCH?.UnpatchAll(_PATCH_NAME);
@@ -61,8 +88,8 @@ public class CarbonClientManager : ICarbonClientManager
 			return;
 		}
 
-		using var packet = RPCList.Get();
-		client.Send("ping", packet, bypassChecks: true);
+		using var packet = RPCList.SERVER_Get();
+		client.Send("ping", packet, checks: false);
 	}
 	public void OnDisconnected(Connection connection)
 	{
@@ -83,6 +110,11 @@ public class CarbonClientManager : ICarbonClientManager
 		if (!Clients.TryGetValue(connection, out var client))
 		{
 			Clients.Add(connection, client = Make(connection));
+		}
+
+		if (client.Player == null)
+		{
+			client.Player = BasePlayer.FindAwakeOrSleeping(client.Connection.userid.ToString());
 		}
 
 		return client;
@@ -117,14 +149,70 @@ public class CarbonClientManager : ICarbonClientManager
 		return client.HasCarbonClient;
 	}
 
-	public void NetworkOldRecoil(bool oldRecoil)
+	public void NetworkClientConfiguration(Carbon.SDK.Client.ClientOptions options)
 	{
-		using var packet = new OldRecoil { Enable = oldRecoil };
+		using var packet = new ClientOptions
+		{
+			UseOldRecoil = options.UseOldRecoil,
+			ClientGravity = options.ClientGravity
+		};
 
 		foreach (var client in Clients.Where(x => x.Value.IsConnected && x.Value.HasCarbonClient))
 		{
-			client.Value.Send("oldrecoil", packet);
+			client.Value.Send("clientoptions", packet);
 		}
+	}
+
+	public void SendRequestsToAllPlayers(bool uninstallAll = true, bool loadingScreen = true)
+	{
+		foreach (var player in BasePlayer.activePlayerList)
+		{
+			SendRequestToPlayer(player.Connection, uninstallAll, loadingScreen);
+		}
+	}
+	public void SendRequestToPlayer(Connection connection, bool uninstallAll = true, bool loadingScreen = true)
+	{
+		if (connection == null)
+		{
+			return;
+		}
+
+		var client = connection.ToCarbonClient() as CarbonClient;
+
+		if (!client.HasCarbonClient)
+		{
+			return;
+		}
+
+		AddonManager.Instance.Deliver(client,
+			uninstallAll: uninstallAll,
+			loadingScreen: loadingScreen,
+			urls: Community.Runtime.ClientConfig.NetworkedAddonsCache);
+	}
+
+	public async void InstallAddons(string[] urls)
+	{
+		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs synchronously...");
+
+		var addons = await AddonManager.Instance.LoadAddons(urls, async: false);
+
+		AddonManager.Instance.Install(addons);
+
+		SendRequestsToAllPlayers();
+	}
+	public async void InstallAddonsAsync(string[] urls)
+	{
+		Logger.Warn($" C4C: Downloading {urls.Length:n0} URLs asynchronously...");
+
+		var addons = await AddonManager.Instance.LoadAddons(urls, async: true);
+		Community.Runtime.CorePlugin.persistence.StartCoroutine(AddonManager.Instance.InstallAsync(addons, () =>
+		{
+			SendRequestsToAllPlayers();
+		}));
+	}
+	public void UninstallAddons()
+	{
+		AddonManager.Instance.Uninstall();
 	}
 
 	public void DisposeClient(ICarbonClient client)

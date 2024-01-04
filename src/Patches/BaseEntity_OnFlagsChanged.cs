@@ -15,7 +15,7 @@ namespace Carbon.Common.Client.Patches;
 
 [HarmonyPatch(typeof(BaseEntity), nameof(BaseEntity.OnFlagsChanged), new Type[] { typeof(BaseEntity.Flags), typeof(BaseEntity.Flags) })]
 [UsedImplicitly]
-public class BaseEntity_SetFlag
+public class BaseEntity_OnFlagsChanged
 {
 	public static void Prefix(BaseEntity.Flags old, BaseEntity.Flags next, ref BaseEntity __instance)
 	{
@@ -31,7 +31,7 @@ public class BaseEntity_SetFlag
 		var isRemoved = removed != 0;
 		var flagName = (isRemoved ? removed : added).ToString().ToLower();
 		var animation = $"{flagName}_{(isRemoved ? 0 : 1)}";
-
+		
 		foreach (AnimationState animState in model.Animation)
 		{
 			if (animState.clip.name != animation) continue;

@@ -25,7 +25,7 @@ namespace Carbon.Client;
 [ProtoInclude(17, typeof(AddonPrefab))]
 [ProtoInclude(18, typeof(EntityModel))]
 [ProtoInclude(19, typeof(EntityModelAnimSync))]
-[ProtoInclude(20, typeof(OldRecoil))]
+[ProtoInclude(20, typeof(ClientOptions))]
 [ProtoInclude(21, typeof(LoadingScreenCUI))]
 public class BasePacket : IPacket, IDisposable
 {

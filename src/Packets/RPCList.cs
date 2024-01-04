@@ -24,27 +24,27 @@ public class RPCList : BasePacket
 	[ProtoMember(3)]
 	public bool NoMap { get; set; }
 
-	[ProtoMember(4)]
-	public bool OldRecoil { get; set; }
-
-	public static RPCList Get()
+	public static RPCList SERVER_Get()
 	{
 		return new RPCList()
 		{
 			RpcIds = RPC.rpcList.Select(x => x.Id).ToArray(),
 			RpcNames = RPC.rpcList.Select(x => x.Name).ToArray(),
-			NoMap = Client.NomapEnabled,
-			OldRecoil = Client.OldRecoil
+			NoMap = Community.Runtime.ClientConfig.Environment.NoMap
+		};
+	}
+	public static RPCList CLIENT_Get()
+	{
+		return new RPCList()
+		{
+			RpcIds = RPC.rpcList.Select(x => x.Id).ToArray(),
+			RpcNames = RPC.rpcList.Select(x => x.Name).ToArray(),
 		};
 	}
 
 	public void Sync()
 	{
 		foreach (var item in RpcNames)
-		{
-			RPC.Get(item);
-		}
-		foreach (var item in RpcIds)
 		{
 			RPC.Get(item);
 		}
