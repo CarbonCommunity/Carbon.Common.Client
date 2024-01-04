@@ -31,9 +31,7 @@ public class BaseEntity_OnFlagsChanged
 		var isRemoved = removed != 0;
 		var flagName = (isRemoved ? removed : added).ToString().ToLower();
 		var animation = $"{flagName}_{(isRemoved ? 0 : 1)}";
-
-		Logger.Log($"added:{added} removed:{removed} isRemoved:{isRemoved} flagName:{flagName} animation:{animation}");
-
+		
 		foreach (AnimationState animState in model.Animation)
 		{
 			if (animState.clip.name != animation) continue;
