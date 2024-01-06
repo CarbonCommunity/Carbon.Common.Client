@@ -139,7 +139,7 @@ public class AddonManager : IDisposable
 
 		if (lookup == null)
 		{
-			Logger.Warn($"Couldn't find '{prefab.Path}' as the asset provided is null. (CreateRustPrefab)");
+			Logger.Warn($"Couldn't find '{prefab.RustPath}' as the asset provided is null. (CreateRustPrefab)");
 			return null;
 		}
 
@@ -148,14 +148,14 @@ public class AddonManager : IDisposable
 
 		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
-			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
+			var entityInstance = GameManager.server.CreateEntity(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			ProcessEntity(entityInstance, prefab);
 
 			CreatedEntities.Add(entityInstance);
 		}
 		else
 		{
-			var instance = GameManager.server.CreatePrefab(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
+			var instance = GameManager.server.CreatePrefab(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
 			CreatedRustPrefabs.Add(instance);
 
 			return instance;
@@ -235,7 +235,7 @@ public class AddonManager : IDisposable
 
 		if (lookup == null)
 		{
-			Logger.Warn($"Couldn't find '{prefab.Path}' as the asset provided is null. (CreateRustPrefabAsync)");
+			Logger.Warn($"Couldn't find '{prefab.RustPath}' as the asset provided is null. (CreateRustPrefabAsync)");
 			return;
 		}
 
@@ -244,7 +244,7 @@ public class AddonManager : IDisposable
 
 		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
-			var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
+			var entityInstance = GameManager.server.CreateEntity(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			ProcessEntity(entityInstance, prefab);
 
 			CreatedEntities.Add(entityInstance);
@@ -303,7 +303,7 @@ public class AddonManager : IDisposable
 
 			if(lookup == null)
 			{
-				Logger.Warn($"Couldn't find '{prefab.Path}' as the asset provided is null. (CreateBasedOnPrefabsAsyncImpl)");
+				Logger.Warn($"Couldn't find '{prefab.RustPath}' as the asset provided is null. (CreateBasedOnPrefabsAsyncImpl)");
 				continue;
 			}
 
@@ -312,7 +312,7 @@ public class AddonManager : IDisposable
 
 			if (isEntity && !prefab.Entity.EnforcePrefab)
 			{
-				var entityInstance = GameManager.server.CreateEntity(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
+				var entityInstance = GameManager.server.CreateEntity(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 				ProcessEntity(entityInstance, prefab);
 
 				CreatedEntities.Add(entityInstance);
@@ -321,7 +321,7 @@ public class AddonManager : IDisposable
 			{
 				var instance = (GameObject)null;
 
-				yield return instance = GameManager.server.CreatePrefab(prefab.Path, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
+				yield return instance = GameManager.server.CreatePrefab(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
 
 				CreatedRustPrefabs.Add(instance);
 			}
