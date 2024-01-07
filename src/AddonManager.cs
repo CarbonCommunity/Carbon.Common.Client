@@ -91,6 +91,11 @@ public class AddonManager : IDisposable
 		source.ApplyModel(entity);
 	}
 
+	public Transform LookupParent(Transform origin, string parent)
+	{
+		return origin == null ? null : origin.Find(parent);
+	}
+
 	public GameObject CreateFromAsset(string path, Asset asset)
 	{
 		if (asset == null)
@@ -109,12 +114,14 @@ public class AddonManager : IDisposable
 
 		if (prefab != null)
 		{
+			var prefabInstance = CreateBasedOnImpl(prefab);
+
 			if (asset.CachedRustBundle.RustPrefabs.TryGetValue(path, out var rustPrefabs))
 			{
-				CreateRustPrefabs(rustPrefabs);
+				CreateRustPrefabs(prefabInstance.transform, rustPrefabs);
 			}
 
-			return CreateBasedOnImpl(prefab);
+			return prefabInstance;
 		}
 		else
 		{
@@ -127,13 +134,15 @@ public class AddonManager : IDisposable
 	{
 		if (Prefabs.TryGetValue(path, out var prefab))
 		{
-			CreateRustPrefabs(prefab.RustPrefabs);
-			return CreateBasedOnImpl(prefab.Object);
+			var prefabInstance = CreateBasedOnImpl(prefab.Object);
+
+			CreateRustPrefabs(prefabInstance.transform, prefab.RustPrefabs);
+			return prefabInstance;
 		}
 
 		return null;
 	}
-	public GameObject CreateRustPrefab(RustPrefab prefab)
+	public GameObject CreateRustPrefab(Transform target, RustPrefab prefab)
 	{
 		var lookup = prefab.Lookup();
 
@@ -149,21 +158,49 @@ public class AddonManager : IDisposable
 		if (isEntity && !prefab.Entity.EnforcePrefab)
 		{
 			var entityInstance = GameManager.server.CreateEntity(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
+
+			if (entityInstance == null) return null;
+
 			ProcessEntity(entityInstance, prefab);
 
+			if (prefab.Parent)
+			{
+				var parent = LookupParent(target, prefab.ParentPath);
+
+				if (parent != null)
+				{
+					entityInstance.transform.SetParent(parent, true);
+				}
+			}
+
 			CreatedEntities.Add(entityInstance);
+
+			return entityInstance.gameObject;
 		}
 		else
 		{
 			var instance = GameManager.server.CreatePrefab(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
+
+			if (instance == null) return instance;
+			
 			CreatedRustPrefabs.Add(instance);
+
+			if (prefab.Parent)
+			{
+				var parent = LookupParent(target, prefab.ParentPath);
+
+				if (parent != null)
+				{
+					instance.transform.SetParent(parent, true);
+				}
+			}
 
 			return instance;
 		}
 
 		return null;
 	}
-	public void CreateRustPrefabs(IEnumerable<RustPrefab> prefabs)
+	public void CreateRustPrefabs(Transform target, IEnumerable<RustPrefab> prefabs)
 	{
 		if (prefabs == null)
 		{
@@ -172,7 +209,7 @@ public class AddonManager : IDisposable
 
 		foreach(var prefab in prefabs)
 		{
-			CreateRustPrefab(prefab);
+			CreateRustPrefab(target, prefab);
 		}
 	}
 
