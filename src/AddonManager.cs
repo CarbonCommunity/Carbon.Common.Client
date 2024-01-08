@@ -197,8 +197,6 @@ public class AddonManager : IDisposable
 
 			return instance;
 		}
-
-		return null;
 	}
 	public void CreateRustPrefabs(Transform target, IEnumerable<RustPrefab> prefabs)
 	{
@@ -228,7 +226,7 @@ public class AddonManager : IDisposable
 			{
 				CreateRustPrefabsAsync(go.transform, prefab.RustPrefabs);
 			};
-			
+
 			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab.Object, callback));
 		}
 		else
