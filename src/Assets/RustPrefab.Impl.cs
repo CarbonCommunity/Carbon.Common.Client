@@ -15,7 +15,7 @@ namespace Carbon.Client
 	{
 		public GameObject Lookup()
 		{
-			return GameManager.server.FindPrefab(Path);
+			return GameManager.server.FindPrefab(RustPath);
 		}
 		public void Apply(GameObject target)
 		{
