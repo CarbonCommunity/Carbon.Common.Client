@@ -181,8 +181,8 @@ public class AddonManager : IDisposable
 		{
 			var instance = GameManager.server.CreatePrefab(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
 
-			if (instance == null) return instance;
-			
+			if (instance == null) return null;
+
 			CreatedRustPrefabs.Add(instance);
 
 			if (prefab.Parent)
@@ -224,8 +224,12 @@ public class AddonManager : IDisposable
 
 		if (Prefabs.TryGetValue(path, out var prefab))
 		{
+			callback += go =>
+			{
+				CreateRustPrefabsAsync(go.transform, prefab.RustPrefabs);
+			};
+			
 			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab.Object, callback));
-			CreateRustPrefabsAsync(prefab.RustPrefabs);
 		}
 		else
 		{
@@ -253,12 +257,14 @@ public class AddonManager : IDisposable
 
 		if (prefab != null)
 		{
-			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab, callback));
-
-			if (asset.CachedRustBundle.RustPrefabs.TryGetValue(path, out var rustPrefabs))
+			callback += go =>
 			{
-				CreateRustPrefabsAsync(rustPrefabs);
-			}
+				if (asset.CachedRustBundle.RustPrefabs.TryGetValue(path, out var rustPrefabs))
+				{
+					CreateRustPrefabsAsync(go.transform, rustPrefabs);
+				}
+			};
+			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(prefab, callback));
 		}
 		else
 		{
@@ -266,7 +272,7 @@ public class AddonManager : IDisposable
 			callback?.Invoke(null);
 		}
 	}
-	public void CreateRustPrefabAsync(RustPrefab prefab)
+	public void CreateRustPrefabAsync(Transform target, RustPrefab prefab)
 	{
 		var lookup = prefab.Lookup();
 
@@ -284,25 +290,46 @@ public class AddonManager : IDisposable
 			var entityInstance = GameManager.server.CreateEntity(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 			ProcessEntity(entityInstance, prefab);
 
+			if (prefab.Parent)
+			{
+				var parent = LookupParent(target, prefab.ParentPath);
+
+				if (parent != null)
+				{
+					entityInstance.transform.SetParent(parent, true);
+				}
+			}
+
 			CreatedEntities.Add(entityInstance);
 		}
 		else
 		{
-			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, go =>
+			Persistence.StartCoroutine(CreateBasedOnAsyncImpl(lookup, instance =>
 			{
-				prefab.Apply(go);
+				prefab.Apply(instance);
+
+				if (prefab.Parent)
+				{
+					var parent = LookupParent(target, prefab.ParentPath);
+
+					if (parent != null)
+					{
+						instance.transform.SetParent(parent, true);
+					}
+				}
+
 				// prefab.ApplyModel(go, go.GetComponent<Model>() ?? go.GetComponentInChildren<Model>());
 			}));
 		}
 	}
-	public void CreateRustPrefabsAsync(IEnumerable<RustPrefab> prefabs)
+	public void CreateRustPrefabsAsync(Transform target, IEnumerable<RustPrefab> prefabs)
 	{
 		if (prefabs == null)
 		{
 			return;
 		}
 
-		Persistence.StartCoroutine(CreateBasedOnPrefabsAsyncImpl(prefabs));
+		Persistence.StartCoroutine(CreateBasedOnPrefabsAsyncImpl(target, prefabs));
 	}
 
 	#region Helpers
@@ -332,7 +359,7 @@ public class AddonManager : IDisposable
 
 		callback?.Invoke(result);
 	}
-	internal IEnumerator CreateBasedOnPrefabsAsyncImpl(IEnumerable<RustPrefab> prefabs)
+	internal IEnumerator CreateBasedOnPrefabsAsyncImpl(Transform target, IEnumerable<RustPrefab> prefabs)
 	{
 		foreach (var prefab in prefabs)
 		{
@@ -352,6 +379,16 @@ public class AddonManager : IDisposable
 				var entityInstance = GameManager.server.CreateEntity(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion());
 				ProcessEntity(entityInstance, prefab);
 
+				if (prefab.Parent)
+				{
+					var parent = LookupParent(target, prefab.ParentPath);
+
+					if (parent != null)
+					{
+						entityInstance.transform.SetParent(parent, true);
+					}
+				}
+
 				CreatedEntities.Add(entityInstance);
 			}
 			else
@@ -359,6 +396,16 @@ public class AddonManager : IDisposable
 				var instance = (GameObject)null;
 
 				yield return instance = GameManager.server.CreatePrefab(prefab.RustPath, prefab.Position.ToVector3(), prefab.Rotation.ToQuaternion(), prefab.Scale.ToVector3());
+
+				if (prefab.Parent)
+				{
+					var parent = LookupParent(target, prefab.ParentPath);
+
+					if (parent != null)
+					{
+						instance.transform.SetParent(parent, true);
+					}
+				}
 
 				CreatedRustPrefabs.Add(instance);
 			}
