@@ -172,7 +172,9 @@ public class CarbonClientManager : ICarbonClientManager
 	}
 	public void SendRequestToPlayer(Connection connection, bool uninstallAll = true, bool loadingScreen = true)
 	{
-		if (connection == null)
+		if (connection == null
+		    || Community.Runtime.ClientConfig.NetworkedAddonsCache == null
+		    || Community.Runtime.ClientConfig.NetworkedAddonsCache.Length == 0)
 		{
 			return;
 		}
