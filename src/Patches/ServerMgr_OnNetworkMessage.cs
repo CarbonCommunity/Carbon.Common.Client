@@ -23,6 +23,5 @@ public class ServerMgr_OnNetworkMessage
 		if (packet.type != CarbonClientManager.PACKET_ID) return true;
 		RPC.HandleRPCMessage(packet.connection, packet.read.UInt32(), packet);
 		return false;
-
 	}
 }
