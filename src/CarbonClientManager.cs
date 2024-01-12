@@ -181,7 +181,7 @@ public class CarbonClientManager : ICarbonClientManager
 
 		var client = connection.ToCarbonClient() as CarbonClient;
 
-		if (!client.HasCarbonClient)
+		if (!client.HasCarbonClient || client.IsDownloadingAddons)
 		{
 			return;
 		}
