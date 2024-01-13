@@ -31,12 +31,12 @@ public class BaseEntity_OnFlagsChanged
 		var isRemoved = removed != 0;
 		var flagName = (isRemoved ? removed : added).ToString().ToLower();
 		var animation = $"{flagName}_{(isRemoved ? 0 : 1)}";
-		
+
 		foreach (AnimationState animState in model.Animation)
 		{
 			if (animState.clip.name != animation) continue;
 
-			model.ModifyAnimation(animState.clip.name, 0f, 1f);
+			model.ModifyAnimation(animState.clip.name, 0f, 1f, sendUpdate: false);
 			break;
 		}
 	}
