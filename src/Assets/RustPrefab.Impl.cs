@@ -15,7 +15,7 @@ namespace Carbon.Client
 	{
 		public GameObject Lookup()
 		{
-			return GameManager.server.FindPrefab(Path);
+			return GameManager.server.FindPrefab(RustPath);
 		}
 		public void Apply(GameObject target)
 		{
@@ -87,99 +87,108 @@ namespace Carbon.Client
 
 				AddonManager.Instance.CreateFromCacheAsync(Model.PrefabPath, prefab =>
 				{
-					if (prefab == null)
+					try
 					{
-						return;
-					}
-
-					if (Model.NetworkAnimation)
-					{
-						Animation = prefab.GetComponent<Animation>();
-
-						ProcessAnimations();
-					}
-
-					prefab.transform.SetParent(entity.transform, false);
-					prefab.transform.localPosition = Vector3.zero;
-					prefab.transform.localRotation = Quaternion.identity;
-					prefab.transform.localScale = Vector3.one;
-
-					OnCustomModelCreated?.Invoke(this);
-
-					var currentSubscribers = new List<Connection>();
-					var action = new Action(() =>
-					{
-						var subscribers = Entity.GetSubscribers();
-
-						if (subscribers == null)
+						if (prefab == null)
 						{
 							return;
 						}
 
-						EntityModelAnimSync animPacket = null;
-
-						var isInvalid = false;
-
-						if (Animation != null)
+						if (Model.NetworkAnimation)
 						{
-							animPacket = new EntityModelAnimSync();
-							var clip = Animation.clip;
-							var state = Animation[clip.name];
-							animPacket.EntityId = Entity.net.ID.Value;
-							animPacket.Clip = clip.name;
+							Animation = prefab.GetComponent<Animation>();
 
-							if (state != null)
+							ProcessAnimations();
+						}
+
+						prefab.transform.SetParent(entity.transform, false);
+						prefab.transform.localPosition = Vector3.zero;
+						prefab.transform.localRotation = Quaternion.identity;
+						prefab.transform.localScale = Vector3.one;
+
+						OnCustomModelCreated?.Invoke(this);
+
+						var currentSubscribers = new List<Connection>();
+						var action = new Action(() =>
+						{
+							var subscribers = Entity.GetSubscribers();
+
+							if (subscribers == null)
 							{
-								animPacket.Time = state.time;
-								animPacket.Speed = state.speed;
-								animPacket.Replay = true;
+								return;
 							}
-							else
+
+							EntityModelAnimSync animPacket = null;
+
+							var isInvalid = false;
+
+							if (Animation != null)
 							{
-								isInvalid = true;
+								animPacket = new EntityModelAnimSync();
+								var clip = Animation.clip;
+								var state = Animation[clip.name];
+								animPacket.EntityId = Entity.net.ID.Value;
+								animPacket.Clip = clip.name;
+
+								if (state != null)
+								{
+									animPacket.Time = state.time;
+									animPacket.Speed = state.speed;
+									animPacket.Replay = true;
+								}
+								else
+								{
+									isInvalid = true;
+								}
 							}
-						}
 
-						if (isInvalid)
+							if (isInvalid)
+							{
+								return;
+							}
+
+							using var modelPacket = new EntityModel
+							{
+								EntityId = Entity.net.ID.Value,
+								PrefabName = Model.PrefabPath,
+								EntitySolidCollision = Model.EntitySolidCollision,
+								EntityTriggerCollision = Model.EntityTriggerCollision,
+								AnimPacket = animPacket
+							};
+
+							foreach (var subscriber in subscribers.Where(subscriber =>
+								         !currentSubscribers.Contains(subscriber)))
+							{
+								if (Community.Runtime.CarbonClientManager.Get(subscriber) is not CarbonClient client)
+									continue;
+
+								SendSync(modelPacket, client);
+
+								currentSubscribers.Insert(0, subscriber);
+							}
+
+							for (int i = 0; i < currentSubscribers.Count; i++)
+							{
+								var subscriber = currentSubscribers[i];
+
+								if (subscribers.Contains(subscriber)) continue;
+
+								currentSubscribers.RemoveAt(i);
+								i--;
+							}
+						});
+
+						InvokeRepeating(action, 1f, RandomEx.GetRandomFloat(1f, 3f));
+						action.Invoke();
+
+						if (Animation != null && model.SyncAnimation)
 						{
-							return;
+							InvokeRepeating(SendAnimationUpdate, 1f, RandomEx.GetRandomFloat(4f, 8f));
 						}
-
-						using var modelPacket = new EntityModel
-						{
-							EntityId = Entity.net.ID.Value,
-							PrefabName = Model.PrefabPath,
-							EntitySolidCollision = Model.EntitySolidCollision,
-							EntityTriggerCollision = Model.EntityTriggerCollision,
-							AnimPacket = animPacket
-						};
-
-						foreach (var subscriber in subscribers.Where(subscriber => !currentSubscribers.Contains(subscriber)))
-						{
-							if (Community.Runtime.CarbonClientManager.Get(subscriber) is not CarbonClient client) continue;
-
-							SendSync(modelPacket, client);
-
-							currentSubscribers.Insert(0, subscriber);
-						}
-
-						for (int i = 0; i < currentSubscribers.Count; i++)
-						{
-							var subscriber = currentSubscribers[i];
-
-							if (subscribers.Contains(subscriber)) continue;
-
-							currentSubscribers.RemoveAt(i);
-							i--;
-						}
-					});
-
-					InvokeRepeating(action, 1f, RandomEx.GetRandomFloat(1f, 3f));
-					action.Invoke();
-
-					if (Animation != null && model.SyncAnimation)
+					}
+					catch (Exception ex)
 					{
-						InvokeRepeating(SendAnimationUpdate, 1f, RandomEx.GetRandomFloat(4f, 8f));
+						Logger.Error($"Failed setting up custom Server Model '{Model.PrefabPath}'", ex);
 					}
 				});
 			}

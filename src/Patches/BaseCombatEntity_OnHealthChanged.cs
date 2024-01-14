@@ -34,7 +34,7 @@ public class BaseCombatEntity_OnHealthChanged
 
 		if (nearestAnimation.Value != currentAnimation)
 		{
-			model.ModifyAnimation(nearestAnimation.Value, 0f, 1f);
+			model.ModifyAnimation(nearestAnimation.Value, 0f, 1f, sendUpdate: false);
 		}
 	}
 }

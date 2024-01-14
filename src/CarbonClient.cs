@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Configuration;
 using System.Diagnostics;
 using Carbon.Client.Contracts;
 using Carbon.Client.Packets;
@@ -26,19 +24,21 @@ public class CarbonClient : ICarbonClient
 	public bool IsConnected => Connection != null && Connection.active;
 	public bool HasCarbonClient { get; set; }
 
+	public bool IsDownloadingAddons { get; set; }
+
 	public int ScreenWidth { get; set; }
 	public int ScreenHeight { get; set; }
 
 	#region Methods
 
-	public bool Send(RPC rpc, IPacket packet = default, bool bypassChecks = true)
+	public bool Send(RPC rpc, IPacket packet = default, bool checks = true)
 	{
-		if (!Client.ClientEnabled)
+		if (!Community.Runtime.ClientConfig.Enabled)
 		{
 			return false;
 		}
 
-		if (!bypassChecks && !IsValid()) return false;
+		if (checks && !IsValid()) return false;
 
 		try
 		{
@@ -66,9 +66,9 @@ public class CarbonClient : ICarbonClient
 
 		return true;
 	}
-	public bool Send(string rpc, IPacket packet = default, bool bypassChecks = true)
+	public bool Send(string rpc, IPacket packet = default, bool checks = true)
 	{
-		return Send(RPC.Get(rpc), packet, bypassChecks);
+		return Send(RPC.Get(rpc), packet, checks);
 	}
 
 	public NetWrite NetworkSend(RPC rpc)
@@ -79,9 +79,9 @@ public class CarbonClient : ICarbonClient
 		return write;
 	}
 
-	void ICarbonClient.Send(string rpc, IPacket packet, bool bypassChecks)
+	void ICarbonClient.Send(string rpc, IPacket packet, bool checks)
 	{
-		Send(rpc, packet, bypassChecks);
+		Send(rpc, packet, checks);
 	}
 
 	public T Receive<T>(Message message)
@@ -176,11 +176,14 @@ public class CarbonClient : ICarbonClient
 	}
 	public void OnDisconnect()
 	{
+		IsDownloadingAddons = false;
+
 		// OnCarbonClientLeft
 		HookCaller.CallStaticHook(978897282, this);
 	}
 	public void Dispose()
 	{
+		IsDownloadingAddons = false;
 		Player = null;
 		Connection = null;
 	}

@@ -38,7 +38,7 @@ public class BaseEntity_UpdateNetworkStage
 		{
 			if (animState.clip.name != stageName) continue;
 
-			model.ModifyAnimation(animState.clip.name, 0f, 1f);
+			model.ModifyAnimation(animState.clip.name, 0f, 1f, sendUpdate: false);
 			break;
 		}
 	}
