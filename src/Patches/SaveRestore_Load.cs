@@ -19,8 +19,7 @@ public class SaveRestore_Load
 	{
 		if (Community.Runtime.ClientConfig.Enabled)
 		{
-			Community.Runtime.CorePlugin.To<CorePlugin>().ReloadCarbonClientAddons(false);
+			CorePlugin.ReloadCarbonClientAddons(false);
 		}
 	}
 }
-
