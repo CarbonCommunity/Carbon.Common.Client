@@ -172,9 +172,8 @@ public class CarbonClientManager : ICarbonClientManager
 	}
 	public void SendRequestToPlayer(Connection connection, bool uninstallAll = true, bool loadingScreen = true)
 	{
-		if (connection == null
-		    || Community.Runtime.ClientConfig.NetworkedAddonsCache == null
-		    || Community.Runtime.ClientConfig.NetworkedAddonsCache.Length == 0)
+		if (connection == null ||
+		    AddonManager.Instance.LoadedAddons.Count == 0)
 		{
 			return;
 		}
@@ -188,8 +187,7 @@ public class CarbonClientManager : ICarbonClientManager
 
 		AddonManager.Instance.Deliver(client,
 			uninstallAll: uninstallAll,
-			loadingScreen: loadingScreen,
-			urls: Community.Runtime.ClientConfig.NetworkedAddonsCache);
+			asynchronous: loadingScreen);
 	}
 
 	public async void InstallAddons(string[] urls)

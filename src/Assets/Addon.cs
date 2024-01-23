@@ -57,6 +57,8 @@ namespace Carbon.Client.Assets
 
 		public Manifest GetManifest()
 		{
+			MarkDirty();
+
 			return new Manifest
 			{
 				Info = new AddonInfo
@@ -69,7 +71,8 @@ namespace Carbon.Client.Assets
 				},
 				Assets = Assets.Select(x => x.Value.GetManifest()).ToArray(),
 				CreationTime = CreationTime,
-				Url = Url
+				Url = Url,
+				Checksum = GetChecksum()
 			};
 		}
 
@@ -185,6 +188,9 @@ namespace Carbon.Client.Assets
 
 			[ProtoMember(4)]
 			public string Url { get; set; }
+
+			[ProtoMember(5)]
+			public string Checksum { get; set; }
 
 			public string CreationTimeReadable => new DateTime(CreationTime).ToString();
 		}

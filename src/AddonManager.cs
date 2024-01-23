@@ -452,20 +452,18 @@ public class AddonManager : IDisposable
 		}
 	}
 
-	public void Deliver(CarbonClient client, bool uninstallAll, bool loadingScreen, params string[] urls)
+	public void Deliver(CarbonClient client, bool uninstallAll, bool asynchronous)
 	{
-		client.Send("addonrequest", new AddonRequest
+		using var request = new AddonRequest
 		{
+			Manifests = LoadedAddons.Select(x => x.Key.GetManifest()).ToArray(),
+			UninstallAll = uninstallAll,
+			Asynchronous = asynchronous
+		};
 
-		});
+		client.Send("addonrequest", request);
 
 		Logger.Log($"{client.Connection} received addon download request");
-
-		client.Send("addondownloadurl", new AddonDownloadUrl
-		{
-			Urls = urls,
-			UninstallAll = uninstallAll
-		});
 	}
 
 	public void Install(List<Addon> addons)
