@@ -14,6 +14,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
 using ProtoBuf;
@@ -76,6 +77,24 @@ namespace Carbon.Client.Assets
 			};
 		}
 
+		public static byte[] Compress(byte[] buffer)
+		{
+			using MemoryStream memoryStream = new MemoryStream();
+			using GZipStream gzipStream = new GZipStream(memoryStream, CompressionMode.Compress);
+			gzipStream.Write(buffer, 0, buffer.Length);
+			gzipStream.Close();
+			return memoryStream.ToArray();
+		}
+
+		public static byte[] Decompress(byte[] buffer)
+		{
+			using MemoryStream memoryStream = new MemoryStream(buffer);
+			using GZipStream gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+			using MemoryStream decompressedStream = new MemoryStream();
+			gzipStream.CopyTo(decompressedStream);
+			return decompressedStream.ToArray();
+		}
+
 		public static Addon Create(AddonInfo info, params Asset[] assets)
 		{
 			var addon = new Addon
@@ -98,24 +117,29 @@ namespace Carbon.Client.Assets
 		}
 		public static Addon ImportFromBuffer(byte[] buffer)
 		{
+			buffer = Decompress(buffer);
+
 			var addon = Serializer.Deserialize<Addon>(new ReadOnlySpan<byte>(buffer, 0, buffer.Length));
 			addon.MarkDirty();
 			return addon;
-
 		}
+
 		public static Addon ImportFromFile(string path)
 		{
 			var data = File.ReadAllBytes(path);
+			data = Decompress(data);
+
 			var result = ImportFromBuffer(data);
 			Array.Clear(data, 0, data.Length);
 			data = null;
 			return result;
 		}
+
 		public byte[] Store()
 		{
 			using var stream = new MemoryStream();
 			Serializer.Serialize(stream, this);
-			return stream.ToArray();
+			return Compress(stream.ToArray());
 		}
 		public void StoreToFile(string path)
 		{
