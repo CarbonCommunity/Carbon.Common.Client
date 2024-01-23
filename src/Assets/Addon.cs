@@ -50,6 +50,8 @@ namespace Carbon.Client.Assets
 		[ProtoMember(8 + Protocol.VERSION)]
 		public long CreationTime { get; set; } = DateTime.Now.Ticks;
 
+		public string Url { get; set; }
+
 		public bool IsDirty { get; set; }
 		public byte[] Buffer { get; set; }
 
@@ -66,7 +68,8 @@ namespace Carbon.Client.Assets
 					Thumbnail = Thumbnail
 				},
 				Assets = Assets.Select(x => x.Value.GetManifest()).ToArray(),
-				CreationTime = CreationTime
+				CreationTime = CreationTime,
+				Url = Url
 			};
 		}
 
@@ -180,6 +183,9 @@ namespace Carbon.Client.Assets
 			[ProtoMember(3)]
 			public long CreationTime { get; set; }
 
+			[ProtoMember(4)]
+			public string Url { get; set; }
+
 			public string CreationTimeReadable => new DateTime(CreationTime).ToString();
 		}
 
@@ -200,6 +206,8 @@ namespace Carbon.Client.Assets
 
 			[ProtoMember(5)]
 			public string Thumbnail;
+
+			public string CacheName => $"{Name.Replace(" ", "_").Replace(".", "_")}".ToLower();
 		}
 	}
 }

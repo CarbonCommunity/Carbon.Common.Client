@@ -5,6 +5,8 @@
  *
  */
 
+using System.Collections.Generic;
+using Carbon.Client.Assets;
 using ProtoBuf;
 
 namespace Carbon.Client.Packets;
@@ -13,11 +15,5 @@ namespace Carbon.Client.Packets;
 public class AddonRequest : BasePacket
 {
 	[ProtoMember(1)]
-	public int AddonCount { get; set; }
-
-	[ProtoMember(2)]
-	public int BufferSize { get; set; }
-
-	[ProtoMember(3)]
-	public bool LoadingScreen { get; set; }
+	public List<Addon.Manifest> Manifests { get; set; }
 }

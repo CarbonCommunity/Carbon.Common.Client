@@ -36,6 +36,7 @@ public class AddonManager : IDisposable
 
 	public struct CacheAddon
 	{
+		public string Url;
 		public Asset Scene;
 		public Asset Models;
 		public string[] ScenePrefabs;
@@ -455,8 +456,7 @@ public class AddonManager : IDisposable
 	{
 		client.Send("addonrequest", new AddonRequest
 		{
-			AddonCount = urls.Length,
-			LoadingScreen = loadingScreen
+
 		});
 
 		Logger.Log($"{client.Connection} received addon download request");
@@ -614,7 +614,10 @@ public class AddonManager : IDisposable
 
 					try
 					{
-						addonResults.Add(Addon.ImportFromBuffer(data));
+						var instance = Addon.ImportFromBuffer(data);
+						instance.Url = addon;
+
+						addonResults.Add(instance);
 					}
 					catch (Exception ex)
 					{
@@ -630,7 +633,10 @@ public class AddonManager : IDisposable
 					{
 						var data = OsEx.File.ReadBytes(addon);
 						Logger.Warn($" C4C: Content loaded locally '{Path.GetFileName(addon)}' ({ByteEx.Format(data.Length, stringFormat: "{0}{1}").ToLower()})");
-						addonResults.Add(Addon.ImportFromBuffer(data));
+
+						var instance = Addon.ImportFromBuffer(data);
+						instance.Url = addon;
+                        addonResults.Add(instance);
 					}
 					catch(Exception ex)
 					{
@@ -650,6 +656,7 @@ public class AddonManager : IDisposable
 	public CacheAddon GetAddonCache(Addon addon)
 	{
 		CacheAddon cache = default;
+		cache.Url = addon.Url;
 		cache.Scene = addon.Assets.FirstOrDefault(x => x.Key == "scene").Value;
 		cache.Models = addon.Assets.FirstOrDefault(x => x.Key == "models").Value;
 
