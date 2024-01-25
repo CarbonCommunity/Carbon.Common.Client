@@ -85,7 +85,6 @@ namespace Carbon.Client.Assets
 			gzipStream.Close();
 			return memoryStream.ToArray();
 		}
-
 		public static byte[] Decompress(byte[] buffer)
 		{
 			using MemoryStream memoryStream = new MemoryStream(buffer);
@@ -123,7 +122,6 @@ namespace Carbon.Client.Assets
 			addon.MarkDirty();
 			return addon;
 		}
-
 		public static Addon ImportFromFile(string path)
 		{
 			var data = File.ReadAllBytes(path);
@@ -237,7 +235,7 @@ namespace Carbon.Client.Assets
 			[ProtoMember(5)]
 			public string Thumbnail;
 
-			public string CacheName => $"{Name.Replace(" ", "_").Replace(".", "_")}".ToLower();
+			public string CacheName => $"{Name.Replace(" ", "_").Replace(".", "_").Replace(":", "_")}".ToLower();
 		}
 	}
 }

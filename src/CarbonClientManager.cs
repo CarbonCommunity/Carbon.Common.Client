@@ -30,7 +30,7 @@ public class CarbonClientManager : ICarbonClientManager
 	public const Message.Type PACKET_ID = (Message.Type)77;
 
 	internal const string _PATCH_NAME = "com.carbon.clientpatch";
-	internal Harmony _PATCH;
+	internal HarmonyLib.Harmony _PATCH;
 
 	public int AddonCount => AddonManager.Instance.LoadedAddons.Count;
 	public int AssetCount => AddonManager.Instance.LoadedAddons.Sum(x => x.Key.Assets.Count);
@@ -55,7 +55,7 @@ public class CarbonClientManager : ICarbonClientManager
 	public void ApplyPatch()
 	{
 		_PATCH?.UnpatchAll(_PATCH_NAME);
-		_PATCH = new Harmony(_PATCH_NAME);
+		_PATCH = new HarmonyLib.Harmony(_PATCH_NAME);
 
 		try
 		{
