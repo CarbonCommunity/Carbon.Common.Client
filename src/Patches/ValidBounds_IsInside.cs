@@ -7,7 +7,7 @@ namespace Carbon.Common.Client.Patches;
 
 /*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community 
  * All rights reserved.
  *
  */
@@ -18,7 +18,7 @@ public class ValidBounds_IsInside
 {
 	public static bool Prefix(Vector3 vPos, ref bool __result)
 	{
-		if (vPos.y <= -400 || vPos.y > 5000)
+		if (!Community.Runtime.ClientConfig.Environment.NoMap || vPos.y <= -400 || vPos.y > 5000)
 		{
 			return true;
 		}

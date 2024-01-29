@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community
+ * Copyright (c) 2022-2024 Carbon Community 
  * All rights reserved.
  *
  */
@@ -81,9 +81,13 @@ namespace Carbon.Client.Assets
 			ClearData();
 		}
 
+		[ProtoContract]
 		public class Manifest
 		{
+			[ProtoMember(1)]
 			public string Name { get; set; }
+
+			[ProtoMember(2)]
 			public int BufferLength { get; set; }
 		}
 	}

@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community
+ * Copyright (c) 2022-2024 Carbon Community 
  * All rights reserved.
  *
  */
@@ -36,6 +36,7 @@ public class AddonManager : IDisposable
 
 	public struct CacheAddon
 	{
+		public string Url;
 		public Asset Scene;
 		public Asset Models;
 		public string[] ScenePrefabs;
@@ -451,21 +452,18 @@ public class AddonManager : IDisposable
 		}
 	}
 
-	public void Deliver(CarbonClient client, bool uninstallAll, bool loadingScreen, params string[] urls)
+	public void Deliver(CarbonClient client, bool uninstallAll, bool asynchronous)
 	{
-		client.Send("addonrequest", new AddonRequest
+		using var request = new AddonRequest
 		{
-			AddonCount = urls.Length,
-			LoadingScreen = loadingScreen
-		});
+			Manifests = LoadedAddons.Select(x => x.Key.GetManifest()).ToArray(),
+			UninstallAll = uninstallAll,
+			Asynchronous = asynchronous
+		};
+
+		client.Send("addonrequest", request);
 
 		Logger.Log($"{client.Connection} received addon download request");
-
-		client.Send("addondownloadurl", new AddonDownloadUrl
-		{
-			Urls = urls,
-			UninstallAll = uninstallAll
-		});
 	}
 
 	public void Install(List<Addon> addons)
@@ -614,7 +612,10 @@ public class AddonManager : IDisposable
 
 					try
 					{
-						addonResults.Add(Addon.ImportFromBuffer(data));
+						var instance = Addon.ImportFromBuffer(data);
+						instance.Url = addon;
+
+						addonResults.Add(instance);
 					}
 					catch (Exception ex)
 					{
@@ -630,7 +631,10 @@ public class AddonManager : IDisposable
 					{
 						var data = OsEx.File.ReadBytes(addon);
 						Logger.Warn($" C4C: Content loaded locally '{Path.GetFileName(addon)}' ({ByteEx.Format(data.Length, stringFormat: "{0}{1}").ToLower()})");
-						addonResults.Add(Addon.ImportFromBuffer(data));
+
+						var instance = Addon.ImportFromBuffer(data);
+						instance.Url = addon;
+                        addonResults.Add(instance);
 					}
 					catch(Exception ex)
 					{
@@ -650,6 +654,7 @@ public class AddonManager : IDisposable
 	public CacheAddon GetAddonCache(Addon addon)
 	{
 		CacheAddon cache = default;
+		cache.Url = addon.Url;
 		cache.Scene = addon.Assets.FirstOrDefault(x => x.Key == "scene").Value;
 		cache.Models = addon.Assets.FirstOrDefault(x => x.Key == "models").Value;
 

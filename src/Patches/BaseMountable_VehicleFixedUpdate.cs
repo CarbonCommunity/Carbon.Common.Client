@@ -10,7 +10,7 @@ namespace Carbon.Common.Client.Patches;
 
 /*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community  
  * All rights reserved.
  *
  */
