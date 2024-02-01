@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community
+ * Copyright (c) 2022-2024 Carbon Community 
  * All rights reserved.
  *
  */
@@ -14,6 +14,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System;
+using System.IO.Compression;
 using System.Security.Cryptography;
 using Newtonsoft.Json;
 using ProtoBuf;
@@ -39,25 +40,58 @@ namespace Carbon.Client.Assets
 		public string Version { get; set; }
 
 		[ProtoMember(5 + Protocol.VERSION)]
-		public string Checksum { get; set; }
+		public string Thumbnail { get; set; }
 
 		[ProtoMember(6 + Protocol.VERSION)]
-		public Dictionary<string, Asset> Assets { get; set; } = new Dictionary<string, Asset>();
+		public string Checksum { get; set; }
 
 		[ProtoMember(7 + Protocol.VERSION)]
+		public Dictionary<string, Asset> Assets { get; set; } = new Dictionary<string, Asset>();
+
+		[ProtoMember(8 + Protocol.VERSION)]
 		public long CreationTime { get; set; } = DateTime.Now.Ticks;
+
+		public string Url { get; set; }
 
 		public bool IsDirty { get; set; }
 		public byte[] Buffer { get; set; }
 
 		public Manifest GetManifest()
 		{
+			MarkDirty();
+
 			return new Manifest
 			{
-				Name = Name,
+				Info = new AddonInfo
+				{
+					Name = Name,
+					Author = Author,
+					Description = Description,
+					Version = Version,
+					Thumbnail = Thumbnail
+				},
 				Assets = Assets.Select(x => x.Value.GetManifest()).ToArray(),
-				CreationTime = CreationTime
+				CreationTime = CreationTime,
+				Url = Url,
+				Checksum = GetChecksum()
 			};
+		}
+
+		public static byte[] Compress(byte[] buffer)
+		{
+			using MemoryStream memoryStream = new MemoryStream();
+			using GZipStream gzipStream = new GZipStream(memoryStream, CompressionMode.Compress);
+			gzipStream.Write(buffer, 0, buffer.Length);
+			gzipStream.Close();
+			return memoryStream.ToArray();
+		}
+		public static byte[] Decompress(byte[] buffer)
+		{
+			using MemoryStream memoryStream = new MemoryStream(buffer);
+			using GZipStream gzipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+			using MemoryStream decompressedStream = new MemoryStream();
+			gzipStream.CopyTo(decompressedStream);
+			return decompressedStream.ToArray();
 		}
 
 		public static Addon Create(AddonInfo info, params Asset[] assets)
@@ -82,24 +116,28 @@ namespace Carbon.Client.Assets
 		}
 		public static Addon ImportFromBuffer(byte[] buffer)
 		{
+			buffer = Decompress(buffer);
+
 			var addon = Serializer.Deserialize<Addon>(new ReadOnlySpan<byte>(buffer, 0, buffer.Length));
 			addon.MarkDirty();
 			return addon;
-
 		}
 		public static Addon ImportFromFile(string path)
 		{
 			var data = File.ReadAllBytes(path);
+			data = Decompress(data);
+
 			var result = ImportFromBuffer(data);
 			Array.Clear(data, 0, data.Length);
 			data = null;
 			return result;
 		}
+
 		public byte[] Store()
 		{
 			using var stream = new MemoryStream();
 			Serializer.Serialize(stream, this);
-			return stream.ToArray();
+			return Compress(stream.ToArray());
 		}
 		public void StoreToFile(string path)
 		{
@@ -158,20 +196,46 @@ namespace Carbon.Client.Assets
 			}
 		}
 
+		[ProtoContract]
 		public class Manifest
 		{
-			public string Name { get; set; }
+			[ProtoMember(1)]
+			public AddonInfo Info { get; set; }
+
+			[ProtoMember(2)]
 			public Asset.Manifest[] Assets { get; set; }
+
+			[ProtoMember(3)]
 			public long CreationTime { get; set; }
+
+			[ProtoMember(4)]
+			public string Url { get; set; }
+
+			[ProtoMember(5)]
+			public string Checksum { get; set; }
+
 			public string CreationTimeReadable => new DateTime(CreationTime).ToString();
 		}
 
+		[ProtoContract]
 		public struct AddonInfo
 		{
+			[ProtoMember(1)]
 			public string Name;
+
+			[ProtoMember(2)]
 			public string Author;
+
+			[ProtoMember(3)]
 			public string Description;
+
+			[ProtoMember(4)]
 			public string Version;
+
+			[ProtoMember(5)]
+			public string Thumbnail;
+
+			public string CacheName => $"{Name.Replace(" ", "_").Replace(".", "_").Replace(":", "_")}".ToLower();
 		}
 	}
 }
