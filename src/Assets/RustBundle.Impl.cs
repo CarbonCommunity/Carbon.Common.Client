@@ -36,13 +36,5 @@ namespace Carbon.Client
 				}
 			}
 		}
-		public void ProcessPrefabs()
-		{
-			AddonManager.Instance.CreateRustPrefabs(RustPrefabs);
-		}
-		public void ProcessPrefabsAsync()
-		{
-			AddonManager.Instance.CreateRustPrefabsAsync(RustPrefabs);
-		}
 	}
 }

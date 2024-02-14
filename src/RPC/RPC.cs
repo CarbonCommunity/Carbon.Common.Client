@@ -4,10 +4,11 @@ using System.Diagnostics;
 using System.Reflection;
 using Carbon.Client.SDK;
 using Carbon.Extensions;
+using Network;
 
 /*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community 
  * All rights reserved.
  *
  */
@@ -108,11 +109,11 @@ public struct RPC
 		return _cache;
 	}
 
-	public static object HandleRPCMessage(BasePlayer player, uint rpc, Network.Message message)
+	public static object HandleRPCMessage(Connection connection, uint rpc, Network.Message message)
 	{
 		if (_cache.TryGetValue(rpc, out var value))
 		{
-			return value(player.ToCarbonClient(), message);
+			return value(connection.ToCarbonClient(), message);
 		}
 
 		return null;

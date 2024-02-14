@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2024 Carbon Community  
+ * Copyright (c) 2022-2024 Carbon Community 
  * All rights reserved.
  *
  */
@@ -10,13 +10,15 @@ using ProtoBuf;
 namespace Carbon.Client.Packets;
 
 [ProtoContract]
-public class HookCall : BasePacket
+public class LoadingScreenCUI : BasePacket
 {
 	[ProtoMember(1)]
-	public string Hook { get; set; }
+	public string Content { get; set; }
 
 	public override void Dispose()
 	{
-		Hook = null;
+		Content = null;
+
+		base.Dispose();
 	}
 }

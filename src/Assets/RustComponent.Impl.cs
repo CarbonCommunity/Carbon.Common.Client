@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
+using Carbon.Components;
 using Carbon.Extensions;
 using UnityEngine;
 
 /*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community 
  * All rights reserved.
  *
  */
@@ -57,13 +59,33 @@ namespace Carbon.Client
 						{
 							value = new LayerMask { value = member.Value.ToInt() };
 						}
-						else if (memberType.IsEnum)
+						else switch (memberType.Name)
 						{
-							value = Enum.Parse(memberType, member.Value);
-						}
-						else
-						{
-							value = Convert.ChangeType(member.Value, memberType);
+							case "Vector2":
+							{
+								using var temp = TemporaryArray<string>.New(member.Value.Split(','));
+								field.SetValue(_instance, new Vector2(temp.Get(0, "0").ToFloat(), temp.Get(1, "0").ToFloat()));
+								break;
+							}
+							case "Vector3":
+							{
+								using var temp = TemporaryArray<string>.New(member.Value.Split(','));
+								field.SetValue(_instance, new Vector3(temp.Get(0, "0").ToFloat(), temp.Get(1, "0").ToFloat(), temp.Get(2, "0").ToFloat()));
+								break;
+							}
+							default:
+							{
+								if (memberType.IsEnum)
+								{
+									value = Enum.Parse(memberType, member.Value);
+								}
+								else
+								{
+									value = Convert.ChangeType(member.Value, memberType);
+								}
+
+								break;
+							}
 						}
 
 						if (field != null)

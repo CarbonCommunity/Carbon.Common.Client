@@ -1,10 +1,13 @@
 ﻿/*
  *
- * Copyright (c) 2022-2023 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community 
  * All rights reserved.
  *
  */
 
+using System;
+using System.Collections.Generic;
+using Carbon.Client.Assets;
 using ProtoBuf;
 
 namespace Carbon.Client.Packets;
@@ -13,14 +16,20 @@ namespace Carbon.Client.Packets;
 public class AddonRequest : BasePacket
 {
 	[ProtoMember(1)]
-	public int AddonCount { get; set; }
+	public Addon.Manifest[] Manifests { get; set; }
 
-	[ProtoMember(2)]
-	public int BufferSize { get; set; }
+	[ProtoMember(2)] public bool Asynchronous { get; set; }
 
-	[ProtoMember(3)]
-	public bool IsUrlDownload { get; set; }
+	[ProtoMember(3)] public bool UninstallAll { get; set; }
 
-	[ProtoMember(4)]
-	public bool LoadingScreen { get; set; }
+	public override void Dispose()
+	{
+		if (Manifests != null)
+		{
+			Array.Clear(Manifests, 0, Manifests.Length);
+			Manifests = null;
+		}
+
+		base.Dispose();
+	}
 }
