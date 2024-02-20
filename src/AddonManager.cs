@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -48,6 +48,7 @@ public class AddonManager : IDisposable
 	}
 	public struct CachePrefab
 	{
+		public string Path;
 		public GameObject Object;
 		public List<RustPrefab> RustPrefabs;
 	}
