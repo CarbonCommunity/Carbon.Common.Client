@@ -14,10 +14,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Carbon.Client.Packets;
 using Carbon.Extensions;
-using Network;
-using Oxide.Core;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace Carbon.Client.Assets;
 
@@ -123,6 +120,7 @@ public class AddonManager : IDisposable
 				CreateRustPrefabs(prefabInstance.transform, rustPrefabs);
 			}
 
+			OnInstanceCreated(prefabInstance, path);
 			return prefabInstance;
 		}
 		else
@@ -139,6 +137,7 @@ public class AddonManager : IDisposable
 			var prefabInstance = CreateBasedOnImpl(prefab.Object);
 
 			CreateRustPrefabs(prefabInstance.transform, prefab.RustPrefabs);
+			OnInstanceCreated(prefabInstance, path);
 			return prefabInstance;
 		}
 
@@ -177,6 +176,7 @@ public class AddonManager : IDisposable
 
 			CreatedEntities.Add(entityInstance);
 
+			OnInstanceCreated(entityInstance.gameObject, prefab.ParentPath);
 			return entityInstance.gameObject;
 		}
 		else
@@ -197,6 +197,7 @@ public class AddonManager : IDisposable
 				}
 			}
 
+			OnInstanceCreated(instance, prefab.ParentPath);
 			return instance;
 		}
 	}
@@ -389,6 +390,7 @@ public class AddonManager : IDisposable
 					}
 				}
 
+				OnInstanceCreated(entityInstance.gameObject, prefab.ParentPath);
 				CreatedEntities.Add(entityInstance);
 			}
 			else
@@ -407,6 +409,7 @@ public class AddonManager : IDisposable
 					}
 				}
 
+				OnInstanceCreated(instance, prefab.ParentPath);
 				CreatedRustPrefabs.Add(instance);
 			}
 		}
@@ -416,6 +419,40 @@ public class AddonManager : IDisposable
 		foreach(var gameObject in gameObjects)
 		{
 			yield return CreateBasedOnAsyncImpl(gameObject, callback);
+		}
+	}
+
+	internal void OnInstanceCreated(GameObject instance, string prefab)
+	{
+		foreach (var addon in LoadedAddons)
+		{
+			ProcessAsset(addon.Value.Models);
+			ProcessAsset(addon.Value.Scene);
+
+			void ProcessAsset(Asset asset)
+			{
+				if (asset == null)
+				{
+					return;
+				}
+
+				var bundle = asset.CachedRustBundle;
+
+				if (bundle != null)
+				{
+					var components = asset.CachedRustBundle.GetRustComponents(prefab);
+
+					if (components == null)
+					{
+						return;
+					}
+
+					foreach (var component in components)
+					{
+						component.PostHandleCreation(instance);
+					}
+				}
+			}
 		}
 	}
 
