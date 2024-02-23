@@ -7,7 +7,7 @@ using UnityEngine;
 
 /*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -22,18 +22,18 @@ namespace Carbon.Client
 
 		public bool Apply(GameObject go)
 		{
-			if (!HandleDisabled(go))
+			if (!PreHandleDisabled(go))
 			{
-				if (HandleDestroy(go))
+				if (PreHandleDestroy(go))
 				{
 					return false;
 				}
 			}
 
-			return HandleComponents(go);
+			return PreHandleComponents(go);
 		}
 
-		internal bool HandleComponents(GameObject go)
+		internal bool PreHandleComponents(GameObject go)
 		{
 			if (!Component.CreateOn.Server || Server == PostProcessMode.Destroyed || _instance != null)
 			{
@@ -59,34 +59,38 @@ namespace Carbon.Client
 						{
 							value = new LayerMask { value = member.Value.ToInt() };
 						}
-						else switch (memberType.Name)
-						{
-							case "Vector2":
+						else
+							switch (memberType.Name)
 							{
-								using var temp = TemporaryArray<string>.New(member.Value.Split(','));
-								field.SetValue(_instance, new Vector2(temp.Get(0, "0").ToFloat(), temp.Get(1, "0").ToFloat()));
-								break;
-							}
-							case "Vector3":
-							{
-								using var temp = TemporaryArray<string>.New(member.Value.Split(','));
-								field.SetValue(_instance, new Vector3(temp.Get(0, "0").ToFloat(), temp.Get(1, "0").ToFloat(), temp.Get(2, "0").ToFloat()));
-								break;
-							}
-							default:
-							{
-								if (memberType.IsEnum)
+								case "Vector2":
 								{
-									value = Enum.Parse(memberType, member.Value);
+									using var temp = TemporaryArray<string>.New(member.Value.Split(','));
+									field.SetValue(_instance,
+										new Vector2(temp.Get(0, "0").ToFloat(), temp.Get(1, "0").ToFloat()));
+									break;
 								}
-								else
+								case "Vector3":
 								{
-									value = Convert.ChangeType(member.Value, memberType);
+									using var temp = TemporaryArray<string>.New(member.Value.Split(','));
+									field.SetValue(_instance,
+										new Vector3(temp.Get(0, "0").ToFloat(), temp.Get(1, "0").ToFloat(),
+											temp.Get(2, "0").ToFloat()));
+									break;
 								}
+								default:
+								{
+									if (memberType.IsEnum)
+									{
+										value = Enum.Parse(memberType, member.Value);
+									}
+									else
+									{
+										value = Convert.ChangeType(member.Value, memberType);
+									}
 
-								break;
+									break;
+								}
 							}
-						}
 
 						if (field != null)
 						{
@@ -94,12 +98,15 @@ namespace Carbon.Client
 						}
 						else
 						{
-							Logger.Error($" Couldn't find member '{member.Name}' for '{Component.Type}' on '{go.transform.GetRecursiveName()}'");
+							Logger.Error(
+								$" Couldn't find member '{member.Name}' for '{Component.Type}' on '{go.transform.GetRecursiveName()}'");
 						}
 					}
 					catch (Exception ex)
 					{
-						Logger.Error($"Failed assigning Rust component member '{member.Name}' to {go.transform.GetRecursiveName()}", ex);
+						Logger.Error(
+							$"Failed assigning Rust component member '{member.Name}' to {go.transform.GetRecursiveName()}",
+							ex);
 					}
 				}
 			}
@@ -113,7 +120,8 @@ namespace Carbon.Client
 
 			return true;
 		}
-		internal bool HandleDisabled(GameObject go)
+
+		internal bool PreHandleDisabled(GameObject go)
 		{
 			if (Server != PostProcessMode.Disabled)
 			{
@@ -123,7 +131,8 @@ namespace Carbon.Client
 			go.SetActive(false);
 			return true;
 		}
-		internal bool HandleDestroy(GameObject go)
+
+		internal bool PreHandleDestroy(GameObject go)
 		{
 			if (Server != PostProcessMode.Destroyed)
 			{
@@ -131,6 +140,30 @@ namespace Carbon.Client
 			}
 
 			go.SetActive(false);
+			return true;
+		}
+
+		internal bool PostHandleCreation(GameObject go)
+		{
+			if (Server != PostProcessMode.Disabled)
+			{
+				return false;
+			}
+
+			if (Behavior == null)
+			{
+				return false;
+			}
+
+			if (Behavior.AutoDisableTimer != 0)
+			{
+				Community.Runtime.CorePlugin.timer.In(Behavior.AutoDisableTimer, () => go.SetActive(false));
+			}
+			else if (Behavior.AutoDestroyTimer != 0)
+			{
+				Community.Runtime.CorePlugin.timer.In(Behavior.AutoDestroyTimer, () => go.SetActive(false));
+			}
+
 			return true;
 		}
 	}

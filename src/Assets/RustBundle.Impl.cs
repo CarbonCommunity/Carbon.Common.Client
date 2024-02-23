@@ -1,4 +1,5 @@
-﻿using Carbon.Client.Assets;
+﻿using System.Collections.Generic;
+using Carbon.Client.Assets;
 using UnityEngine;
 
 namespace Carbon.Client
@@ -35,6 +36,11 @@ namespace Carbon.Client
 					}
 				}
 			}
+		}
+
+		public List<RustComponent> GetRustComponents(string prefab)
+		{
+			return Components.TryGetValue(prefab, out var components) ? components : null;
 		}
 	}
 }
