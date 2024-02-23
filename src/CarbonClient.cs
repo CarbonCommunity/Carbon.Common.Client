@@ -9,7 +9,7 @@ using UnityEngine;
 
 /*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -73,8 +73,7 @@ public class CarbonClient : ICarbonClient
 
 	public NetWrite NetworkSend(RPC rpc)
 	{
-		var write = Net.sv.StartWrite();
-		write.PacketID(CarbonClientManager.PACKET_ID);
+		var write = Net.sv.StartWrite(CarbonClientManager.PACKET_ID);
 		write.UInt32(rpc.Id);
 		return write;
 	}

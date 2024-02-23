@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -68,6 +68,7 @@ public partial class Asset : IDisposable
 			if (!AddonManager.Instance.Prefabs.ContainsKey(processedAssetPath))
 			{
 				AddonManager.CachePrefab cache = default;
+				cache.Path = asset;
 				cache.Object = CachedBundle.LoadAsset<GameObject>(asset);
 
 				ProcessClientObjects(cache.Object.transform);
