@@ -120,7 +120,6 @@ public class AddonManager : IDisposable
 				CreateRustPrefabs(prefabInstance.transform, rustPrefabs);
 			}
 
-			OnInstanceCreated(prefabInstance, path);
 			return prefabInstance;
 		}
 		else
@@ -137,7 +136,7 @@ public class AddonManager : IDisposable
 			var prefabInstance = CreateBasedOnImpl(prefab.Object);
 
 			CreateRustPrefabs(prefabInstance.transform, prefab.RustPrefabs);
-			OnInstanceCreated(prefabInstance, path);
+			OnInstanceCreated(prefabInstance);
 			return prefabInstance;
 		}
 
@@ -176,7 +175,7 @@ public class AddonManager : IDisposable
 
 			CreatedEntities.Add(entityInstance);
 
-			OnInstanceCreated(entityInstance.gameObject, prefab.ParentPath);
+			OnInstanceCreated(entityInstance.gameObject);
 			return entityInstance.gameObject;
 		}
 		else
@@ -197,7 +196,7 @@ public class AddonManager : IDisposable
 				}
 			}
 
-			OnInstanceCreated(instance, prefab.ParentPath);
+			OnInstanceCreated(instance);
 			return instance;
 		}
 	}
@@ -358,6 +357,8 @@ public class AddonManager : IDisposable
 
 		FixName(result);
 
+		OnInstanceCreated(result);
+
 		callback?.Invoke(result);
 	}
 	internal IEnumerator CreateBasedOnPrefabsAsyncImpl(Transform target, IEnumerable<RustPrefab> prefabs)
@@ -390,7 +391,7 @@ public class AddonManager : IDisposable
 					}
 				}
 
-				OnInstanceCreated(entityInstance.gameObject, prefab.ParentPath);
+				OnInstanceCreated(entityInstance.gameObject);
 				CreatedEntities.Add(entityInstance);
 			}
 			else
@@ -409,7 +410,7 @@ public class AddonManager : IDisposable
 					}
 				}
 
-				OnInstanceCreated(instance, prefab.ParentPath);
+				OnInstanceCreated(instance);
 				CreatedRustPrefabs.Add(instance);
 			}
 		}
@@ -422,7 +423,7 @@ public class AddonManager : IDisposable
 		}
 	}
 
-	internal void OnInstanceCreated(GameObject instance, string prefab)
+	internal void OnInstanceCreated(GameObject instance)
 	{
 		foreach (var addon in LoadedAddons)
 		{
@@ -440,16 +441,25 @@ public class AddonManager : IDisposable
 
 				if (bundle != null)
 				{
-					var components = asset.CachedRustBundle.GetRustComponents(prefab);
+					Recurse(instance.transform);
 
-					if (components == null)
+					void Recurse(Transform parent)
 					{
-						return;
-					}
+						var path = parent.GetRecursiveName().ToLower();
+						var components = bundle.GetRustComponents(path);
 
-					foreach (var component in components)
-					{
-						component.PostHandleCreation(instance);
+						if (components != null)
+						{
+							foreach (var component in components)
+							{
+								component.PostHandleCreation(parent.gameObject);
+							}
+						}
+
+						for (int i = 0; i < parent.GetChildCount(); i++)
+						{
+							Recurse(parent.GetChild(i));
+						}
 					}
 				}
 			}
