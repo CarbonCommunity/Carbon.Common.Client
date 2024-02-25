@@ -456,9 +456,9 @@ public class AddonManager : IDisposable
 							}
 						}
 
-						for (int i = 0; i < parent.GetChildCount(); i++)
+						foreach (Transform child in parent)
 						{
-							Recurse(parent.GetChild(i));
+							Recurse(child);
 						}
 					}
 				}
