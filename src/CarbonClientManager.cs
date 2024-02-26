@@ -16,7 +16,7 @@ using ClientOptions = Carbon.Client.Packets.ClientOptions;
 
 /*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -95,9 +95,12 @@ public class CarbonClientManager : ICarbonClientManager
 	{
 		var client = Get(connection);
 
-		client.OnDisconnect();
+		if (client != null)
+		{
+			client.OnDisconnect();
 
-		DisposeClient(client);
+			DisposeClient(client);
+		}
 	}
 
 	public ICarbonClient Get(Connection connection)
