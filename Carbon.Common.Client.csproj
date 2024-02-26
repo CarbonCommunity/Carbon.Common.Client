@@ -9,7 +9,6 @@
 	<Import Project="$(SolutionDir)\.msbuild\ReferencesRust.props" />
 
 	<ItemGroup>
-		<PackageReference Include="Lib.Harmony.Thin" Version="2.3.0" />
 		<ProjectReference Include="$(SolutionDir)\Carbon.Components\Carbon.Common\Carbon.Common.csproj" Private="false" />
 	</ItemGroup>
 
