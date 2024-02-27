@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -77,8 +77,6 @@ namespace Carbon.Client.Assets
 			}
 
 			CachedBundle.Unload(true);
-
-			ClearData();
 		}
 
 		[ProtoContract]
