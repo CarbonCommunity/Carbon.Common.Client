@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using Carbon.Components;
 using HarmonyLib;
 using JetBrains.Annotations;
 
@@ -10,7 +11,7 @@ namespace Carbon.Common.Client.Patches;
 
 /*
  *
- * Copyright (c) 2022-2024 Carbon Community  
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -19,14 +20,11 @@ namespace Carbon.Common.Client.Patches;
 [UsedImplicitly]
 public class BaseMountable_VehicleFixedUpdate
 {
-	private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> Instructions, ILGenerator Generator, MethodBase Method)
+	private static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions, ILGenerator generator, MethodBase method)
 	{
-		var array = Instructions.ToArray();
+		using var array = TemporaryArray<CodeInstruction>.New(instructions.ToArray());
 		var x = 0;
-		var targetIndex = Array.FindIndex(array, x => x.operand is MethodInfo { Name: "TestDist" });
-
-		Array.Clear(array, 0, array.Length);
-		array = null;
+		var targetIndex = Array.FindIndex(array.Array, x => x.operand is MethodInfo { Name: "TestDist" });
 
 		if (targetIndex == -1)
 		{
@@ -34,7 +32,7 @@ public class BaseMountable_VehicleFixedUpdate
 			yield break;
 		}
 
-		foreach (CodeInstruction instruction in Instructions)
+		foreach (var instruction in instructions)
 		{
 			if (x++ != targetIndex)
 			{
@@ -44,6 +42,7 @@ public class BaseMountable_VehicleFixedUpdate
 
 			instruction.operand = float.MaxValue;
 			instruction.opcode = OpCodes.Ldc_R4;
+			yield return new CodeInstruction(OpCodes.Pop);
 			yield return new CodeInstruction(OpCodes.Pop);
 			yield return instruction;
 		}

@@ -7,12 +7,12 @@ namespace Carbon.Common.Client.Patches;
 
 /*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
 
-[HarmonyPatch(typeof(ValidBounds), "IsInside", new Type[] { typeof(Vector3) })]
+[HarmonyPatch(typeof(ValidBounds), "TestInnerBounds", new Type[] { typeof(Vector3) })]
 [UsedImplicitly]
 public class ValidBounds_IsInside
 {
