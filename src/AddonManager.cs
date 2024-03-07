@@ -136,7 +136,7 @@ public class AddonManager : IDisposable
 			var prefabInstance = CreateBasedOnImpl(prefab.Object);
 
 			CreateRustPrefabs(prefabInstance.transform, prefab.RustPrefabs);
-			OnInstanceCreated(prefabInstance);
+			OnInstanceCreated(prefabInstance, path, null);
 			return prefabInstance;
 		}
 
@@ -175,7 +175,7 @@ public class AddonManager : IDisposable
 
 			CreatedEntities.Add(entityInstance);
 
-			OnInstanceCreated(entityInstance.gameObject);
+			OnInstanceCreated(entityInstance.gameObject, prefab.RustPath, prefab.ParentPath);
 			return entityInstance.gameObject;
 		}
 		else
@@ -196,7 +196,7 @@ public class AddonManager : IDisposable
 				}
 			}
 
-			OnInstanceCreated(instance);
+			OnInstanceCreated(instance, prefab.RustPath, prefab.ParentPath);
 			return instance;
 		}
 	}
@@ -357,7 +357,8 @@ public class AddonManager : IDisposable
 
 		FixName(result);
 
-		OnInstanceCreated(result);
+		var context = Prefabs.FirstOrDefault(x => x.Value.Object == gameObject);
+		OnInstanceCreated(result, context.Key, null);
 
 		callback?.Invoke(result);
 	}
@@ -391,7 +392,7 @@ public class AddonManager : IDisposable
 					}
 				}
 
-				OnInstanceCreated(entityInstance.gameObject);
+				OnInstanceCreated(entityInstance.gameObject, prefab.RustPath, prefab.ParentPath);
 				CreatedEntities.Add(entityInstance);
 			}
 			else
@@ -410,7 +411,7 @@ public class AddonManager : IDisposable
 					}
 				}
 
-				OnInstanceCreated(instance);
+				OnInstanceCreated(instance, prefab.RustPath, prefab.ParentPath);
 				CreatedRustPrefabs.Add(instance);
 			}
 		}
@@ -423,8 +424,11 @@ public class AddonManager : IDisposable
 		}
 	}
 
-	internal void OnInstanceCreated(GameObject instance)
+	internal void OnInstanceCreated(GameObject instance, string mainAssetPath, string secondAssetPath)
 	{
+		// OnCustomPrefabInstance(GameObject, string, string)
+		HookCaller.CallStaticHook(3938374885, instance, mainAssetPath, secondAssetPath);
+
 		foreach (var addon in LoadedAddons)
 		{
 			ProcessAsset(addon.Value.Models);
