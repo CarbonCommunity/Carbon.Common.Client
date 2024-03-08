@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -73,7 +73,7 @@ namespace Carbon.Client.Assets
 				Assets = Assets.Select(x => x.Value.GetManifest()).ToArray(),
 				CreationTime = CreationTime,
 				Url = Url,
-				Checksum = GetChecksum()
+				Checksum = Checksum
 			};
 		}
 

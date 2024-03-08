@@ -14,7 +14,7 @@ namespace Carbon.Common.Client.Patches;
 
 /*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -23,7 +23,7 @@ namespace Carbon.Common.Client.Patches;
 [UsedImplicitly]
 public class Door_Close
 {
-	public static void Postfix(BaseEntity.RPCMessage rpc, Door __instance)
+	public static void Prefix(BaseEntity.RPCMessage rpc, Door __instance)
 	{
 		if (!rpc.player.CanInteract(true) || !__instance.canHandOpen || !__instance.IsOpen() || __instance.IsBusy() || __instance.IsLocked())
 			return;
