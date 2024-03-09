@@ -185,6 +185,9 @@ namespace Carbon.Client
 						{
 							InvokeRepeating(SendAnimationUpdate, 1f, RandomEx.GetRandomFloat(4f, 8f));
 						}
+
+						// OnCustomEntityModelCreated
+						HookCaller.CallStaticHook(440705248, this);
 					}
 					catch (Exception ex)
 					{

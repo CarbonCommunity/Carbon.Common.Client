@@ -14,7 +14,7 @@ namespace Carbon.Common.Client.Patches;
 
 /*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -23,9 +23,9 @@ namespace Carbon.Common.Client.Patches;
 [UsedImplicitly]
 public class Door_Open
 {
-	public static void Postfix(BaseEntity.RPCMessage rpc, Door __instance)
+	public static void Prefix(BaseEntity.RPCMessage rpc, Door __instance)
 	{
-		if (!rpc.player.CanInteract(true) || !__instance.canHandOpen || !__instance.IsOpen() || __instance.IsBusy() || __instance.IsLocked())
+		if (!rpc.player.CanInteract(true) || !__instance.canHandOpen || __instance.IsOpen() || __instance.IsBusy() || __instance.IsLocked())
 			return;
 
 		if (!RustPrefab.ServerModel.Models.TryGetValue(__instance, out var model) || model.Animation == null ||
@@ -38,4 +38,3 @@ public class Door_Open
 		Community.Runtime.CorePlugin.timer.In(model.Animation.clip.length, () => __instance.SetFlag(BaseEntity.Flags.Busy, false));
 	}
 }
-

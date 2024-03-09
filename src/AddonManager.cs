@@ -1,6 +1,6 @@
 ﻿/*
  *
- * Copyright (c) 2022-2024 Carbon Community 
+ * Copyright (c) 2022-2024 Carbon Community
  * All rights reserved.
  *
  */
@@ -14,10 +14,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Carbon.Client.Packets;
 using Carbon.Extensions;
-using Network;
-using Oxide.Core;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace Carbon.Client.Assets;
 
@@ -48,6 +45,7 @@ public class AddonManager : IDisposable
 	}
 	public struct CachePrefab
 	{
+		public string Path;
 		public GameObject Object;
 		public List<RustPrefab> RustPrefabs;
 	}
@@ -138,6 +136,7 @@ public class AddonManager : IDisposable
 			var prefabInstance = CreateBasedOnImpl(prefab.Object);
 
 			CreateRustPrefabs(prefabInstance.transform, prefab.RustPrefabs);
+			OnInstanceCreated(prefabInstance, path, null);
 			return prefabInstance;
 		}
 
@@ -176,6 +175,7 @@ public class AddonManager : IDisposable
 
 			CreatedEntities.Add(entityInstance);
 
+			OnInstanceCreated(entityInstance.gameObject, prefab.RustPath, prefab.ParentPath);
 			return entityInstance.gameObject;
 		}
 		else
@@ -196,6 +196,7 @@ public class AddonManager : IDisposable
 				}
 			}
 
+			OnInstanceCreated(instance, prefab.RustPath, prefab.ParentPath);
 			return instance;
 		}
 	}
@@ -356,6 +357,9 @@ public class AddonManager : IDisposable
 
 		FixName(result);
 
+		var context = Prefabs.FirstOrDefault(x => x.Value.Object == gameObject);
+		OnInstanceCreated(result, context.Key, null);
+
 		callback?.Invoke(result);
 	}
 	internal IEnumerator CreateBasedOnPrefabsAsyncImpl(Transform target, IEnumerable<RustPrefab> prefabs)
@@ -388,6 +392,7 @@ public class AddonManager : IDisposable
 					}
 				}
 
+				OnInstanceCreated(entityInstance.gameObject, prefab.RustPath, prefab.ParentPath);
 				CreatedEntities.Add(entityInstance);
 			}
 			else
@@ -406,6 +411,7 @@ public class AddonManager : IDisposable
 					}
 				}
 
+				OnInstanceCreated(instance, prefab.RustPath, prefab.ParentPath);
 				CreatedRustPrefabs.Add(instance);
 			}
 		}
@@ -415,6 +421,52 @@ public class AddonManager : IDisposable
 		foreach(var gameObject in gameObjects)
 		{
 			yield return CreateBasedOnAsyncImpl(gameObject, callback);
+		}
+	}
+
+	internal void OnInstanceCreated(GameObject instance, string mainAssetPath, string secondAssetPath)
+	{
+		// OnCustomPrefabInstance(GameObject, string, string)
+		HookCaller.CallStaticHook(3938374885, instance, mainAssetPath, secondAssetPath);
+
+		foreach (var addon in LoadedAddons)
+		{
+			ProcessAsset(addon.Value.Models);
+			ProcessAsset(addon.Value.Scene);
+
+			void ProcessAsset(Asset asset)
+			{
+				if (asset == null)
+				{
+					return;
+				}
+
+				var bundle = asset.CachedRustBundle;
+
+				if (bundle != null)
+				{
+					Recurse(instance.transform);
+
+					void Recurse(Transform parent)
+					{
+						var path = parent.GetRecursiveName().ToLower();
+						var components = bundle.GetRustComponents(path);
+
+						if (components != null)
+						{
+							foreach (var component in components)
+							{
+								component.PostHandleCreation(parent.gameObject);
+							}
+						}
+
+						foreach (Transform child in parent)
+						{
+							Recurse(child);
+						}
+					}
+				}
+			}
 		}
 	}
 
