@@ -145,7 +145,7 @@ namespace Carbon.Client
 
 		internal bool PostHandleCreation(GameObject go)
 		{
-			if (Server != PostProcessMode.Disabled)
+			if (Server != PostProcessMode.Active)
 			{
 				return false;
 			}
